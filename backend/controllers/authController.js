@@ -7,8 +7,8 @@ const signup = async (req, res) => {
     const { email, password, role } = req.body;
 
     if (!email || !password || !role) {
-      res.status(400).json({ error: "All fields are required" });
-      return;
+      return res.status(400).json({ error: "All fields are required" });
+      
     }
 
     //? Email normalization
@@ -16,15 +16,15 @@ const signup = async (req, res) => {
 
     //? Password validation
     if (password.length < 8) {
-      res.status(400).json({ error: "Password should be at least 8 characters" });
-      return;
+      return res.status(400).json({ error: "Password should be at least 8 characters" });
+      
     }
 
     //? Check existing user
     const existuser = await User.findOne({ email: normalizedemail });
     if (existuser) {
-      res.status(400).json({ error: "The user already exists!" });
-      return;
+      return res.status(400).json({ error: "The user already exists!" });
+      
     }
 
     //? Hash password
