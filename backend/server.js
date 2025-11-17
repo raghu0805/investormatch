@@ -4,6 +4,7 @@ import User from "./models/User.js";
 import auth from './middleware/authMiddleware.js'
 import cors from 'cors'
 import authRoutes from './routes/authRoutes.js';
+import startupRoutes from './routes/startupRoutes.js';
 dotenv.config();
 import connectDB from './config/db.js';
 connectDB();
@@ -17,6 +18,9 @@ app.use(express.json());
 //?auth routes
 
 app.use("/api/auth",authRoutes)
+
+//?startup routes
+app.use("/api/startup",startupRoutes);
 
 //?protected routes by jwt 
 app.get("/profile", auth, async (req, res) => {
