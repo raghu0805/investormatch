@@ -1,5 +1,5 @@
 import Startup from '../models/StartupProfile.js';
-
+import Investor from '../models/InvestorProfile.js';
 const createStartupProfile = async (req, res) => {
     try {
         // userId should come from JWT, not req.body
@@ -131,4 +131,77 @@ const updateStartupProfile=async(req,res)=>{
   return res.status(500).json({error:"Server error"});
 }
 }
-export {createStartupProfile,getMyStartupProfile,updateStartupProfile};
+
+
+
+const matchInvestors = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+
+    const startup = await Startup.findOne({ userId });
+    if (!startup) {
+      return res.status(404).json({ message: "Startup profile not found" });
+    }
+
+   
+    const investors = await Investor.find({});
+
+    let maximumScore = 0;
+    let topInvestor = null;
+
+    investors.forEach((investor) => {
+      const score = calculateScore(investor, startup);
+
+      if (score >= maximumScore) {
+        maximumScore = score;
+        topInvestor = investor;
+      }
+    });
+
+    return res.status(200).json({
+      startup,
+      topInvestor,
+      maximumScore
+    });
+
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+const calculateScore = (investor, startup) => {
+  let score = 0;
+
+ 
+  if (investor.location.toLowerCase() === startup.location.toLowerCase()) {
+    score += 20;
+  }
+
+ 
+  if (investor.preferredIndustries.includes(startup.industry)) {
+    score += 40;
+  }
+
+  
+  if (
+    investor.minimumInvestment <= startup.fundingNeeded &&
+    investor.maximumInvestment >= startup.fundingNeeded
+  ) {
+    score += 30;
+  }
+
+    
+  if (
+    investor.investmentInterest &&
+    investor.investmentInterest.toLowerCase().includes(startup.stage.toLowerCase())
+  ) {
+    score += 10;
+  }
+
+  return score;
+};
+
+export {createStartupProfile,getMyStartupProfile,updateStartupProfile,matchInvestors};

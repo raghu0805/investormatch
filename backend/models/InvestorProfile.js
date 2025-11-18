@@ -22,7 +22,7 @@ const investorProfileSchema = new mongoose.Schema(
       required: true,
     },
     preferredIndustries: { type: [String], required: true },
-    investmentInterest: { type: String, required: true }, // your “interest” renamed
+    investmentInterest: { type: String, required: true }, 
     description: { type: String },
     websiteURL: { type: String }
   },
