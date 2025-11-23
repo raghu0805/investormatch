@@ -13,7 +13,7 @@ const PORT=process.env.PORT||5000;
 
 connectDB();
 //?middleware
-app.use(cors())
+app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
 
 //?auth routes
@@ -35,6 +35,11 @@ app.get("/profile", auth, async (req, res) => {
     res.status(500).json({ error: "Failed to fetch user profile" });
   }
 });
+
+
+app.get("/",(req,res)=>{
+  res.json({message:"get route"})
+})
 app.listen(PORT,()=>{
     console.log(`Server is running on port ${PORT}`);
 })
