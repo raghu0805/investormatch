@@ -16,21 +16,21 @@ export default function Login() {
     console.log({ email, password });
     const res = await api.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
-    navigate("/startupDashboard");
+    navigate("/startup/dashboard");
   };
 
   return (
 
-    <div className="min-h-screen flex items-center justify-center font-[Jaro] bg-cover bg-center" >
+    <div className="min-h-screen flex items-center justify-center font-[Jaro] bg-cover bg-center " >
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className="bg-black/40 backdrop-blur-xl p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-700">
+        className="bg-black/40 backdrop-blur-xl p-10 rounded-2xl shadow-xl w-full max-w-md border border-gray-700 ">
 
-        <h1 className="text-4xl text-center text-red-600 mb-8 tracking-wide">LOGIN</h1>
+        <h1 className="text-4xl text-center text-red-600 mb-8 tracking-wide ">LOGIN</h1>
 
-        <div className="mb-6">
+        <div className="mb-6 ">
           <label className="text-gray-300 text-lg">Email</label>
           <input
             type="email"

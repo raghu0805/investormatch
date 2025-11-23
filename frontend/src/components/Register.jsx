@@ -29,7 +29,7 @@ export function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center font-[Jaro] bg-cover bg-center">
+    <div className="min-h-screen flex items-center justify-center font-[Jaro] bg-cover bg-center ">
       <motionRegister.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
