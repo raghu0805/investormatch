@@ -1,0 +1,113 @@
+import { useState, useEffect } from "react";
+import api from "../../utils/api";
+import { useNavigate } from "react-router-dom";
+
+export default function MatchedInvestors() {
+  const navigate = useNavigate();
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMatches = async () => {
+    try {
+      const res = await api.get("/startup/match-investors");
+      console.log(res.data.topInvestor);
+       setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
+      console.log(res.data.topInvestor);
+    } catch (err) {
+      console.log("Error fetching matches", err);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
+  if (loading)
+    return (
+      <div className="text-white text-center mt-10 text-xl">Loading matches...</div>
+    );
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white p-6">
+      <div className="max-w-4xl mx-auto bg-gray-800 p-8 rounded-2xl shadow-2xl">
+
+        <h1 className="text-3xl font-bold mb-6 text-center">
+          Matched Investors
+        </h1>
+
+        {matches.length === 0 && (
+          <p className="text-center text-gray-400 mt-10 text-lg">
+            No matching investors found.
+          </p>
+        )}
+
+        <div className="space-y-6">
+          {matches.map((item, index) => {
+            const investor = item;
+
+            return (
+              <div
+                key={index}
+                className="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600"
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <h2 className="text-xl font-bold">{investor.investorName}</h2>
+
+                  <span
+                    className="px-4 py-1 bg-blue-600 text-white text-sm rounded-full font-semibold"
+                  >
+                    Score: {item.score}
+                  </span>
+                </div>
+
+                <p className="text-gray-300">
+                  <strong>Type:</strong> {investor.investorType.toUpperCase()}
+                </p>
+
+                <p className="text-gray-300">
+                  <strong>Location:</strong> {investor.location}
+                </p>
+
+                <p className="text-gray-300">
+                  <strong>Investment Range:</strong> ₹{investor.minimumInvestment} - ₹
+                  {investor.maximumInvestment}
+                </p>
+
+                <p className="text-gray-300">
+                  <strong>Risk Level:</strong> {investor.riskLevel}
+                </p>
+
+                <p className="text-gray-300">
+                  <strong>Preferred Industries:</strong>{" "}
+                  {investor.preferredIndustries.join(", ")}
+                </p>
+
+                {investor.investmentInterest && (
+                  <p className="text-gray-300 mt-2">
+                    <strong>Interest:</strong> {investor.investmentInterest}
+                  </p>
+                )}
+
+                {/* Future feature: Full profile */}
+                <button
+                  onClick={() => alert("Full profile feature coming soon!")}
+                  className="mt-4 w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg text-white font-semibold"
+                >
+                  View Full Profile
+                </button>
+              </div>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => navigate("/startup/dashboard")}
+          className="mt-8 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold"
+        >
+          Back to Dashboard
+        </button>
+      </div>
+    </div>
+  );
+}

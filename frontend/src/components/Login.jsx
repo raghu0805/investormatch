@@ -16,7 +16,13 @@ export default function Login() {
     console.log({ email, password });
     const res = await api.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
-    navigate("/startup/dashboard");
+    if(res.data.user.role=="investor"){
+      navigate("/investor/dashboard");
+    }
+    else{
+
+      navigate("/startup/dashboard");
+    }
   };
 
   return (

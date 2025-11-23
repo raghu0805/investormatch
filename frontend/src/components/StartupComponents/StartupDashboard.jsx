@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
-import api from "../utils/api";
-import { AuthContext } from "../context/DataContext";
+import api from "../../utils/api.js";
+import { AuthContext } from "../../context/DataContext";
 
 
 export default function StartupDashboard() {
@@ -92,7 +92,7 @@ export default function StartupDashboard() {
             <p className="mb-4">View investors matched using industry, funding, location, and stage.</p>
 
             <button
-              onClick={() => navigate("/startup/matches")}
+              onClick={() => navigate("/startup/matched-investors")}
               className="px-5 py-3 bg-green-600 hover:bg-green-700 text-lg rounded-xl font-semibold"
             >
               View Matches
