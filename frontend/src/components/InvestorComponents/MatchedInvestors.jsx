@@ -6,13 +6,34 @@ export default function MatchedInvestors() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userId,setUserId]=useState(null);
+  // const [startupId, setStartupId] = useState(null);
+  // const [investorId, setInvestorId] = useState(null);
+  const handleSendRequest = async (investorId) => {
+    try {
+      console.log(investorId)
+      await api.post("/request/send",{investorId});
+      console.log("Request sent");
+
+    }
+    catch (err) {
+      console.log("Error in sending request", err);
+    }
+  }
 
   const fetchMatches = async () => {
     try {
       const res = await api.get("/startup/match-investors");
+
+      setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
       console.log(res.data.topInvestor);
-       setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
-      console.log(res.data.topInvestor);
+      setUserId(res.data.topInvestor.userId)
+
+
+
+      const result_startup = await api.get("/startup/me");
+      console.log(result_startup.data.profile.userId);
+      // setStartupId(result_startup.data.profile.userId);
     } catch (err) {
       console.log("Error fetching matches", err);
     }
@@ -21,6 +42,7 @@ export default function MatchedInvestors() {
 
   useEffect(() => {
     fetchMatches();
+
   }, []);
 
   if (loading)
@@ -54,11 +76,6 @@ export default function MatchedInvestors() {
                 <div className="flex justify-between items-center mb-3">
                   <h2 className="text-xl font-bold">{investor.investorName}</h2>
 
-                  <span
-                    className="px-4 py-1 bg-blue-600 text-white text-sm rounded-full font-semibold"
-                  >
-                    Score: {item.score}
-                  </span>
                 </div>
 
                 <p className="text-gray-300">
@@ -95,6 +112,12 @@ export default function MatchedInvestors() {
                   className="mt-4 w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg text-white font-semibold"
                 >
                   View Full Profile
+                </button>
+                <button
+                  onClick={() => handleSendRequest(investor.userId)}
+                  className="mt-4 w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg text-white font-semibold"
+                >
+                  Send Request
                 </button>
               </div>
             );

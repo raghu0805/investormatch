@@ -17,6 +17,7 @@ export default function StartupDashboard() {
       try {
         const res = await api.get("/startup/me");
         setProfile(res.data.profile || res.data.data);
+        console.log(res.data.profile,res.data.profile._id);
       } catch (err) {
         console.log(err);
       } finally {

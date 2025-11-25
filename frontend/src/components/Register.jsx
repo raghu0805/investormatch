@@ -10,20 +10,18 @@ import { HiEyeSlash } from "react-icons/hi2";
 
 export function Register() {
   const [viewPassword, setViewPassword] = useState(false);
-  const [name, setName] = useStateRegister("");
   const [email, setEmail] = useStateRegister("");
   const [password, setPassword] = useStateRegister("");
   const [role, setRole] = useStateRegister("startup");
   const navigate = useNavigate();
   const formData = {
-    name,
     email,
     password,
     role
   }
 
   const handleRegister = async () => {
-    console.log({ name, email, password, role });
+    console.log({  email, password, role });
     await api.post("/auth/signup", formData);
     navigate("/login")
   };
@@ -38,15 +36,7 @@ export function Register() {
       >
         <h1 className="text-4xl text-center text-red-600 mb-8 tracking-wide">REGISTER</h1>
 
-        <div className="mb-6">
-          <label className="text-gray-300 text-lg">Name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full mt-2 p-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-600"
-          />
-        </div>
+
 
         <div className="mb-6">
           <label className="text-gray-300 text-lg">Email</label>

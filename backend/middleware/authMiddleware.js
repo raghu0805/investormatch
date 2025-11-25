@@ -8,6 +8,7 @@ const auth=async (req,res,next)=>{
     try{
         const decoded_message=jwt.verify(token,process.env.JWT_SECRET);
         req.userId=decoded_message.id;
+        console.log("Req.userId:",req.userId);
         next();
     }
     catch(err){

@@ -26,6 +26,11 @@ app.use("/api/startup",startupRoutes);
 //?investor routes
 app.use("/api/investor",investorRoutes);
 
+//?Request routes.
+import requestRoutes from "./routes/requestRoutes.js";
+app.use("/api/request", requestRoutes);
+
+
 //?protected routes by jwt 
 app.get("/profile", auth, async (req, res) => {
   try {
