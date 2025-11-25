@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
+import toast from "react-hot-toast";
 
 export default function CreateStartupProfile() {
   const navigate = useNavigate();
@@ -35,6 +36,7 @@ export default function CreateStartupProfile() {
 
     try {
       const res = await api.post("/startup/create", form);
+      toast.success("Startup profile is created");
       navigate("/startup/dashboard");
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to create profile");

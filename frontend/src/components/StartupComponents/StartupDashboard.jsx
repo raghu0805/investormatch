@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import api from "../../utils/api.js";
 import { AuthContext } from "../../context/DataContext";
+import Navbar from "../Navbar.jsx";
 
 
 export default function StartupDashboard() {
@@ -37,18 +38,20 @@ export default function StartupDashboard() {
   }
 
   return (
+    <>
+    <Navbar/>
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white px-6 py-10">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-10">
         <h1 className="text-3xl font-bold">Startup Dashboard</h1>
 
-        <button
+        {/* <button
           onClick={logout}
           className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg font-medium"
         >
           Logout
-        </button>
+        </button> */}
       </div>
 
       {/* If no startup profile */}
@@ -103,5 +106,6 @@ export default function StartupDashboard() {
         </div>
       )}
     </div>
+    </>
   );
 }

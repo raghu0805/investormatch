@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import { useNavigate } from "react-router-dom";
+import Navbar from "../Navbar";
 
 export default function MatchedInvestors() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export default function MatchedInvestors() {
     try {
       console.log(investorId)
       await api.post("/request/send",{investorId});
-      console.log("Request sent");
+      toast.success("Request sent successfully");
 
     }
     catch (err) {
@@ -51,6 +52,8 @@ export default function MatchedInvestors() {
     );
 
   return (
+    <>
+    <Navbar/>
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-4xl mx-auto bg-gray-800 p-8 rounded-2xl shadow-2xl">
 
@@ -132,5 +135,6 @@ export default function MatchedInvestors() {
         </button>
       </div>
     </div>
+    </>
   );
 }

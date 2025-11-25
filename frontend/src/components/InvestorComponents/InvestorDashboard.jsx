@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
+import Navbar from "../Navbar";
 
 export default function InvestorDashboard() {
   const navigate = useNavigate();
@@ -27,6 +28,9 @@ export default function InvestorDashboard() {
     return <div className="text-white text-center mt-10 text-xl">Loading...</div>;
 
   return (
+    <>
+    <Navbar/>
+  
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-3xl mx-auto bg-gray-800 p-8 rounded-2xl shadow-2xl">
 
@@ -73,5 +77,6 @@ export default function InvestorDashboard() {
 
       </div>
     </div>
+      </>
   );
 }

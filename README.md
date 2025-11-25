@@ -13,3 +13,14 @@ Matching Engine:
 
  
 --Rome was not build in a day--
+
+
+
+
+✔ Startup Flow
+
+Login → Dashboard → Create/Edit Profile → Matched Investors → Send Request → View Sent Requests → Logout
+
+✔ Investor Flow
+
+Login → Dashboard → Create/Edit Profile → View Received Requests → Accept/Reject → Logout

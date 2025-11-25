@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api.js";
+import toast from "react-hot-toast";
+import Navbar from "../Navbar.jsx";
 
 export default function StartupRequests() {
   const [requests, setRequests] = useState([]);
@@ -8,6 +10,7 @@ export default function StartupRequests() {
   const fetchRequests = async () => {
     try {
       const res = await api.get("/request/sent");
+      
       console.log(res);
       setRequests([res.data.data] || []);
     } catch (err) {
@@ -29,6 +32,9 @@ export default function StartupRequests() {
   }
 
   return (
+    <>
+    <Navbar/>
+    
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <h1 className="text-3xl font-bold mb-6 text-center">Sent Requests</h1>
 
@@ -69,5 +75,6 @@ export default function StartupRequests() {
         ))}
       </div>
     </div>
+    </>
   );
 }

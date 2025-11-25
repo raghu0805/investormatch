@@ -12,6 +12,7 @@ import CreateStartupProfile from "./components/StartupComponents/CreateStartupPr
 import EditStartupProfile from "./components/StartupComponents/EditStartupProfile";
 import StartupRequests from "./components/StartupComponents/StartupRequests";
 import InvestorRequests from "./components/InvestorComponents/InvestorRequests";
+import Navbar from "./components/Navbar";
 
 function App() {
 
@@ -35,6 +36,7 @@ function App() {
         <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests/> </ProtectedRoutes>}></Route>
 
         <Route path="/startup/matched-investors"element={<ProtectedRoutes><MatchedInvestors /></ProtectedRoutes>} />
+        <Route path="/navbar"element={<ProtectedRoutes><Navbar /></ProtectedRoutes>} />
       </Routes>
       {/* <Register/> */}
     </>

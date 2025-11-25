@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../utils/api";
+import Navbar from "../Navbar";
 
 export default function InvestorRequests() {
   const [requests, setRequests] = useState([]);
@@ -38,6 +39,8 @@ export default function InvestorRequests() {
   }
 
   return (
+    <>
+    <Navbar/>
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <h1 className="text-3xl font-bold mb-6 text-center">Received Requests</h1>
 
@@ -94,5 +97,6 @@ export default function InvestorRequests() {
         ))}
       </div>
     </div>
+    </>
   );
 }

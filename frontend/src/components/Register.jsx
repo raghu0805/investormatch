@@ -22,6 +22,7 @@ export function Register() {
 
   const handleRegister = async () => {
     console.log({  email, password, role });
+    localStorage.setItem("role",role);
     await api.post("/auth/signup", formData);
     navigate("/login")
   };

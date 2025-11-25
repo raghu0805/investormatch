@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 
 import { HiMiniEye } from "react-icons/hi2";
 import { HiEyeSlash } from "react-icons/hi2";
+import toast from "react-hot-toast";
 
 
 export default function Login() {
@@ -16,6 +17,8 @@ export default function Login() {
     console.log({ email, password });
     const res = await api.post("/auth/login", { email, password });
     localStorage.setItem("token", res.data.token);
+    
+    toast.success("login successfully");
     if(res.data.user.role=="investor"){
       navigate("/investor/dashboard");
     }
