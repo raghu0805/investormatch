@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import { useNavigate } from "react-router-dom";
 import Navbar from "../Navbar";
+import toast from "react-hot-toast";
 
 export default function MatchedInvestors() {
   const navigate = useNavigate();
@@ -18,10 +19,13 @@ export default function MatchedInvestors() {
 
     }
     catch (err) {
-      console.log("Error in sending request", err);
+      toast.error(err.response.data.message);
     }
   }
 
+  // const checkAlreadyRequestSent=async()=>{
+    
+  // }
   const fetchMatches = async () => {
     try {
       const res = await api.get("/startup/match-investors");
@@ -43,6 +47,7 @@ export default function MatchedInvestors() {
 
   useEffect(() => {
     fetchMatches();
+    // checkAlreadyRequestSent();
 
   }, []);
 

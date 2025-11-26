@@ -6,6 +6,7 @@ import api from "../utils/api";
 
 import { HiMiniEye } from "react-icons/hi2";
 import { HiEyeSlash } from "react-icons/hi2";
+import toast from "react-hot-toast";
 
 
 export function Register() {
@@ -21,10 +22,18 @@ export function Register() {
   }
 
   const handleRegister = async () => {
-    console.log({  email, password, role });
-    localStorage.setItem("role",role);
-    await api.post("/auth/signup", formData);
-    navigate("/login")
+    try{
+
+      console.log({  email, password, role });
+      localStorage.setItem("role",role);
+      await api.post("/auth/signup", formData);
+      navigate("/login")
+    }
+    catch(err){
+      toast.error(err.response.data.error)
+      setEmail("");
+      setPassword("");
+    }
   };
 
   return (
