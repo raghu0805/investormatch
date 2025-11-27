@@ -8,7 +8,7 @@ const signup = async (req, res) => {
 
     if (!email || !password || !role) {
       return res.status(400).json({ error: "All fields are required" });
-      
+
     }
 
     //? Email normalization
@@ -17,19 +17,19 @@ const signup = async (req, res) => {
     //? Password validation
     if (password.length < 8) {
       return res.status(400).json({ error: "Password should be at least 8 characters" });
-      
+
     }
 
     //? Check existing user
     const existuser = await User.findOne({ email: normalizedemail });
     if (existuser) {
       return res.status(400).json({ error: "The user already exists!" });
-      
+
     }
 
     //? Hash password
-    const salt = await bcrypt.genSalt(10);     
-    const hashedpassword = await bcrypt.hash(password, salt); 
+    const salt = await bcrypt.genSalt(10);
+    const hashedpassword = await bcrypt.hash(password, salt);
     console.log("hashed password:", hashedpassword, password);
 
     //? Create new user
@@ -82,10 +82,10 @@ const login = async (req, res) => {
       return res.status(400).json({ error: "Invalid details" });
     }
 
-    const token=jwt.sign({
-      id:existingUser._id,
-      email:existingUser.email
-    },process.env.JWT_SECRET,{expiresIn:process.env.JWT_EXPIRES_IN});
+    const token = jwt.sign({
+      id: existingUser._id,
+      email: existingUser.email
+    }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
 
     //? Success
     return res.status(200).json({
@@ -102,4 +102,6 @@ const login = async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 };
-export { signup,login };
+
+
+export { signup, login, };

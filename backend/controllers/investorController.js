@@ -138,7 +138,22 @@ const updateInvestorProfile = async (req, res) => {
         });
     }
 };
+const getInvestorProfileById = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
-export {
-    createInvestorProfile, getMyInvestorProfile, updateInvestorProfile
+    const profile = await Investor.findOne({ userId });
+
+    if (!profile) {
+      return res.status(404).json({ message: "Investor profile not found" });
+    }
+
+    return res.status(200).json({ success: true, profile });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export {createInvestorProfile, getMyInvestorProfile, updateInvestorProfile,getInvestorProfileById
 };

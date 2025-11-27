@@ -11,7 +11,7 @@ export default function StartupRequests() {
     try {
       const res = await api.get("/request/sent");
       
-      console.log(res);
+      console.log(res.data.data);
       setRequests([res.data.data] || []);
     } catch (err) {
       console.log("Error fetching requests:", err);

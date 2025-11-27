@@ -60,5 +60,19 @@ const updateRequestStatus = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-export { sendRequest,getSentRequests,getReceivedRequests,updateRequestStatus };
+const checkingAlreadySent=async()=>{
+  try{
+    const startupId=req.userId;
+    const {investorId}=req.body;
+    const requestExist = await Request.findOne({ investorId, startupId });
+    if(requestExist){
+      return res.status(400).json({message:"The request is already sent"})
+    }
+    return res.status(200).json({message:"The request is not sent"});
+  }
+  catch(err){
+       return res.status(500).json({ message: "Server error" });
+  }
+}
+export { sendRequest,getSentRequests,getReceivedRequests,updateRequestStatus,checkingAlreadySent };
 
