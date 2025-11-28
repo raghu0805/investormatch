@@ -18,7 +18,7 @@ export default function Navbar() {
       {/* Left Side - Brand */}
       <div 
         className="text-xl font-bold tracking-wide cursor-pointer" 
-        onClick={() => navigate(`/${role}/dashboard`)}
+        onClick={() => navigate("/")}
       >
         InvestMatch
       </div>

@@ -2,13 +2,23 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navbar from "./Navbar";
 import NewsFeedSection from "./NewsFeedSection";
+import { useContext } from "react";
+import { AuthContext } from "../context/DataContext";
 
 export default function LandingPage() {
   const navigate = useNavigate();
+      const { token, role } = useContext(AuthContext);
 
+  
+    // useEffect(() => {
+    //   if (token && role) {
+    //     navigate(`/${role}/dashboard`);
+    //   }
+    // }, [token, role, navigate]);
+  
   return (
     <>
-
+    {token&&role?<><Navbar/></>:""}
     <div className="relative min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center px-6 overflow-hidden">
 
       {/* 🟥 BACKGROUND GLOW EFFECT */}
@@ -73,7 +83,7 @@ export default function LandingPage() {
         </motion.p>
 
         {/* Buttons */}
-        <motion.div
+        {!(token&& role)?<>     <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.6 }}
@@ -92,7 +102,8 @@ export default function LandingPage() {
           >
             Register
           </button>
-        </motion.div>
+        </motion.div></>:<></>}
+   
 
         {/* Floating Scroll Text */}
         {/* <motion.div

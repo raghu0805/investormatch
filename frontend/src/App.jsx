@@ -15,19 +15,10 @@ import InvestorRequests from "./components/InvestorComponents/InvestorRequests";
 import Navbar from "./components/Navbar";
 import LandingPage from "./components/LandingPage";
 import InvestorFullProfile from "./components/InvestorComponents/InvestorFullProfile";
-import { useContext, useEffect } from "react";
-import { AuthContext } from "./context/DataContext";
+
 import NotFound from "./components/NotFound";
 
 function App() {
-    const { token, role } = useContext(AuthContext);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (token && role) {
-      navigate(`/${role}/dashboard`);
-    }
-  }, [token, role, navigate]);
 
   return (
     <>
