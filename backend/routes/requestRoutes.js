@@ -12,8 +12,6 @@ router.get("/sent", authMiddleware, getSentRequests);
 
 router.get("/check_request",authMiddleware,checkingAlreadySent);
 
-
-
 // Investor views their own received requests
 router.get("/received", authMiddleware, getReceivedRequests);
 

@@ -21,8 +21,9 @@ const sendRequest = async (req, res) => {
 const getSentRequests = async (req, res) => {
     try {
       const startupId=req.userId;
+      console.log("startup id from getSentRequest:",startupId)
 
-        const sent = await Request.findOne({ startupId }).populate("investorId");
+        const sent = await Request.find({ startupId }).populate("investorId");
         return res.status(200).json({ message: "the sent request fetched ", data: sent });
     } catch (err) {
         return res.status(500).json({ message: "Server Error" });
@@ -60,10 +61,10 @@ const updateRequestStatus = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-const checkingAlreadySent=async()=>{
+const checkingAlreadySent=async(req,res)=>{
   try{
     const startupId=req.userId;
-    const {investorId}=req.body;
+const investorId = req.query.investorId;   
     const requestExist = await Request.findOne({ investorId, startupId });
     if(requestExist){
       return res.status(400).json({message:"The request is already sent"})
