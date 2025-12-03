@@ -34,7 +34,7 @@ export function Register() {
     console.log(res.data.signupAllowed);
 
     if (res.data.signupAllowed) {
-      console.log("hello from inside")
+
       setGoogleData(res.data);
       setShowRoleSelect(true);
     } 
