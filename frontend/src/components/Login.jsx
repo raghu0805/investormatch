@@ -7,8 +7,8 @@ import { HiMiniEye } from "react-icons/hi2";
 import { HiEyeSlash } from "react-icons/hi2";
 import toast from "react-hot-toast";
 import { AuthContext } from "../context/DataContext";
-import GoogleAuthButton from "./GoogleOAuthButton";
 import { GoogleLogin } from "@react-oauth/google";
+import { jwtDecode } from "jwt-decode";
 
 
 export default function Login() {
@@ -19,6 +19,39 @@ export default function Login() {
 
   
   const { login } = useContext(AuthContext);
+const handleGoogleLogin = async (response) => {
+  try {
+    console.log(response)
+    const user = jwtDecode(response.credential);
+    console.log(user);
+    const res = await api.post("/auth/google", {
+      mode: "login",
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+    });
+    console.log(res)
+
+    // If login success
+    login(res.data.token, res.data.user.role);
+    localStorage.setItem("role", res.data.user.role);
+
+    toast.success("Login Successful");
+
+    if (res.data.user.role === "investor") {
+      navigate("/investor/dashboard");
+    } else {
+      navigate("/startup/dashboard");
+    }
+
+  } catch (err) {
+    // BACKEND SAYS: User not registered
+    toast.error("You don’t have an account. Please sign up first.");
+    navigate("/signup");
+  }
+};
+
+
   const handleLogin = async () => {
   try {
     const res = await api.post("/auth/login", { email, password });
@@ -111,7 +144,12 @@ export default function Login() {
     >
       LOGIN
     </button>
-    <GoogleAuthButton mode="login">Login</GoogleAuthButton>
+<GoogleLogin
+  text="signin_with"
+  onSuccess={handleGoogleLogin}
+  onError={() => toast.error("Google login failed")}
+/>
+
   </motion.div>
 </div>
 

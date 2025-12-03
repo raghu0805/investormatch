@@ -137,7 +137,7 @@ const RegisterRole= async (req, res) => {
     const { email, name, picture, role } = req.body;
 
 const newUser = await User.create({
-  email,
+  email: email.toLowerCase().trim(),
   name,
   picture,
   role,

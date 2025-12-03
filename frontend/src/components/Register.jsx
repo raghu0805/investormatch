@@ -21,6 +21,7 @@ export function Register() {
   const [showRoleSelect, setShowRoleSelect] = useState(false);
 
   const handleGoogleSignup = async (response) => {
+    try{
     const user = jwtDecode(response.credential);
 
     const res = await api.post("/auth/google", {
@@ -36,10 +37,19 @@ export function Register() {
       console.log("hello from inside")
       setGoogleData(res.data);
       setShowRoleSelect(true);
-    } else {
-      console.log(res.response.data.message)
-      toast.error("Account already exists. Please login.");
+    } 
     }
+    catch(err){
+    if (err.response?.data?.message === "Already registered") {
+      toast.error("Account already exists. Please log in.");
+      navigate("/login");
+      return;
+    }
+
+    // Any other error
+    toast.error("Google signup failed");
+    }
+
   };
   const handleRoleSelect = async (selectedRole) => {
   try {
