@@ -7,6 +7,8 @@ import { HiMiniEye } from "react-icons/hi2";
 import { HiEyeSlash } from "react-icons/hi2";
 import toast from "react-hot-toast";
 import { AuthContext } from "../context/DataContext";
+import GoogleAuthButton from "./GoogleOAuthButton";
+import { GoogleLogin } from "@react-oauth/google";
 
 
 export default function Login() {
@@ -105,10 +107,11 @@ export default function Login() {
     <button
       onClick={handleLogin}
       className="w-full bg-red-600 hover:bg-red-700 transition-all py-3 rounded-xl 
-      text-white font-bold text-xl shadow-[0_0_20px_rgba(255,0,0,0.5)]"
+      text-white font-bold text-xl shadow-[0_0_20px_rgba(255,0,0,0.5)] mb-4"
     >
       LOGIN
     </button>
+    <GoogleAuthButton mode="login">Login</GoogleAuthButton>
   </motion.div>
 </div>
 

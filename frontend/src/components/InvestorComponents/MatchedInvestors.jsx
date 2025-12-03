@@ -7,28 +7,44 @@ import toast from "react-hot-toast";
 export default function MatchedInvestors() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(true);
-
+  const [loading, setLoading] = useState(false);
+  const [requestStatus, setRequestStatus] = useState(false);
   const handleSendRequest = async (investorId) => {
     try {
       await api.post("/request/send", { investorId });
+
+      setRequestStatus(!requestStatus);
       toast.success("Request sent successfully");
     } catch (err) {
+
       toast.error(err.response?.data?.message || "Failed to send request");
     }
   };
 
-  const fetchMatches = async () => {
-    try {
-      const res = await api.get("/startup/match-investors");
 
-      // res.data.topInvestor = a single investor
-      setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
-    } catch (err) {
-      console.log("Error fetching matches", err);
+const fetchMatches = async () => {
+  try {
+    const res = await api.get("/startup/match-investors");
+
+    setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
+
+    if (res.data.topInvestor) {
+      const investorId = res.data.topInvestor._id;
+
+      const investor_data = await api.get(
+        `/request/check_request?investorId=${investorId}`
+      );
+      console.log(investor_data)
+
+      setRequestStatus(investor_data.data.exists === true);
     }
-    setLoading(false);
-  };
+
+  } catch (err) {
+          setRequestStatus(!requestStatus);
+    console.log("Error fetching matches", err);
+  }
+  setLoading(false);
+};
 
   useEffect(() => {
     fetchMatches();
@@ -44,7 +60,7 @@ export default function MatchedInvestors() {
       <Navbar />
       <div className="min-h-screen bg-gray-900 text-white p-6">
         <div className="max-w-4xl mx-auto bg-gray-800 p-8 rounded-2xl shadow-2xl">
-          
+
           <h1 className="text-3xl font-bold mb-6 text-center">
             Matched Investors
           </h1>
@@ -84,35 +100,42 @@ export default function MatchedInvestors() {
                 )}
 
                 {/* Correct View Profile Button */}
-    
-       <button
-  onClick={() => navigate(`/investor/profile/${investor.userId}`)}
-  className="mt-8 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold"
->
-  View Full Profile
-</button>
+
+
+                <button
+                  onClick={() => navigate(`/investor/profile/${investor.userId}`,{state:{from:"matched"}})}
+                  className="mt-8 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold"
+                >
+                  View Full Profile
+                </button>
 
 
                 {/* Send Request */}
-                <button
-                  onClick={() => handleSendRequest(investor.userId)}
-                  className="mt-4 w-full bg-green-600 hover:bg-green-700 py-2 rounded-lg text-white font-semibold"
-                >
-                  Send Request
-                </button>
+<button
+  disabled={requestStatus === true}
+  onClick={() => handleSendRequest(investor._id)}
+  className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
+    ${requestStatus === true 
+      ? "bg-gray-500 cursor-not-allowed" 
+      : "bg-green-600 hover:bg-green-700"}
+  `}
+>
+  {requestStatus === true ? "Request Already Sent" : "Send Request"}
+</button>
+
 
               </div>
             ))}
           </div>
 
-<div className="flex justify-center mt-8">
-  <button
-    onClick={() => navigate("/startup/dashboard")}
-    className="bg-red-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-white font-semibold"
-  >
-    Back to Dashboard
-  </button>
-</div>
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => navigate("/startup/dashboard")}
+              className="bg-red-600 hover:bg-blue-700 px-6 py-3 rounded-lg text-white font-semibold"
+            >
+              Back to Dashboard
+            </button>
+          </div>
 
         </div>
       </div>

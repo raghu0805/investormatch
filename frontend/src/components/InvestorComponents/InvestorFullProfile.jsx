@@ -1,16 +1,25 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import api from "../../utils/api";
 import Navbar from "../../components/Navbar";
 
 export default function InvestorFullProfile() {
   const { id } = useParams(); // userId of investor
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const handleNavigation=async()=>{
+    if(location.state?.from==="matched"){
+      navigate("/startup/matched-investors")
+    }
+    else{
+      navigate("/startup/request")
+    }
+  }
   const fetchInvestor = async () => {
     try {
       const res = await api.get(`/investor/profile/${id}`);
@@ -54,7 +63,6 @@ export default function InvestorFullProfile() {
               <strong>Investment Range:</strong>
               ₹{profile.minimumInvestment} - ₹{profile.maximumInvestment}
             </p>
-
             <p><strong>Location:</strong> {profile.location}</p>
 
             <p><strong>Risk Level:</strong> {profile.riskLevel}</p>
@@ -88,12 +96,11 @@ export default function InvestorFullProfile() {
           </div>
 
           <button
-            onClick={() => navigate("/startup/matched-investors")}
+            onClick={() => handleNavigation()}
             className="mt-6 w-full bg-blue-600 py-3 rounded-lg hover:bg-blue-700 font-semibold"
           >
-            Back to Matches
+            Back 
           </button>
-
         </div>
 
       </div>

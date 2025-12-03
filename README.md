@@ -5,7 +5,6 @@ Startups can create profiles, view matching investors, and send connection reque
 Investors can manage profile details and accept/reject startup requests.
 
 This project is built using **MERN Stack** with JWT authentication and clean, modular architecture.
-
 ---
 
 ## ⭐ Features
@@ -40,8 +39,6 @@ Matches startups with investors using scoring logic:
 
 Investors are returned in **sorted order** (highest score first).
 
----
-
 ## 🛠️ Tech Stack
 
 ### **Frontend**
@@ -63,7 +60,6 @@ Investors are returned in **sorted order** (highest score first).
 - Postman (API Testing)
 - Render (Backend Deployment)
 - Vercel (Frontend Deployment)
-
 ---
 
 ## 📁 Folder Structure
@@ -85,19 +81,13 @@ Investors are returned in **sorted order** (highest score first).
 │ └── App.jsx
 └── index.html
 
-
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/investorDB
 JWT_SECRET=xxxxxxxx
 JWT_EXPIRES_IN=7d
 
 ✔ Startup Flow
-
 Login → Dashboard → Create/Edit Profile → Matched Investors → Send Request → View Sent Requests → Logout
 
 ✔ Investor Flow
-
 Login → Dashboard → Create/Edit Profile → View Received Requests → Accept/Reject → Logout
-
-
-

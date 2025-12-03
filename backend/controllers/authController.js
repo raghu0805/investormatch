@@ -36,7 +36,8 @@ const signup = async (req, res) => {
     const newUser = await User.create({
       email: normalizedemail,
       password: hashedpassword,
-      role
+      role,
+      googleUser: false,
     });
 
     //? Send response
@@ -104,4 +105,52 @@ const login = async (req, res) => {
 };
 
 
-export { signup, login, };
+const GoogleLogin=async (req,res)=>{
+  const{mode,email,name,picture}=req.body;
+  const user=await User.findOne({email});
+  if (mode=="login"){
+    if(!user){
+      return res.status(400).json({message:"User not registered"});
+    }
+    return res.status(200).json({
+      message:"Login success",
+      user,
+      token:createToken(user._id,user.role)
+    })
+  }
+  if(mode=="signup"){
+    if(user){
+      return res.status(400).json({message:"Already registered"});
+    }
+    return res.json({signupAllowed:true,email,name,picture});
+  }
+}
+//?helper function
+const createToken = (userId, role) => {
+   return jwt.sign(
+      { id: userId, role: role },
+      process.env.JWT_SECRET,
+      { expiresIn:process.env.JWT_EXPIRES_IN }
+   );
+};
+const RegisterRole= async (req, res) => {
+    const { email, name, picture, role } = req.body;
+
+const newUser = await User.create({
+  email,
+  name,
+  picture,
+  role,
+  googleUser: true,
+  password: null,
+});
+
+
+    return res.json({
+        message: "Signup success",
+        token: createToken(newUser._id, newUser.role),
+        user: newUser,
+    });
+};
+
+export { signup, login,GoogleLogin,RegisterRole };
