@@ -17,6 +17,8 @@ import LandingPage from "./components/LandingPage";
 import InvestorFullProfile from "./components/InvestorComponents/InvestorFullProfile";
 
 import NotFound from "./components/NotFound";
+import ChatList from "./pages/Chatlist";
+import ChatWindow from "./pages/ChatWindow";
 
 function App() {
 
@@ -38,17 +40,21 @@ function App() {
         <Route path="/investor/dashboard" element={<ProtectedRoutes><InvestorDashboard /></ProtectedRoutes>} />
         <Route path="/investor/create-profile" element={<ProtectedRoutes><CreateInvestorProfile /></ProtectedRoutes>} />
         <Route path="/investor/edit-profile" element={<ProtectedRoutes><EditInvestorProfile /></ProtectedRoutes>} />
-        <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests/> </ProtectedRoutes>}></Route>
+        <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests /> </ProtectedRoutes>}></Route>
 
-        <Route path="/investor/profile/:id"element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>}/>
-
-
-        <Route path="/startup/matched-investors"element={<ProtectedRoutes><MatchedInvestors /></ProtectedRoutes>} />
-        <Route path="/navbar"element={<ProtectedRoutes><Navbar /></ProtectedRoutes>} />
+        <Route path="/investor/profile/:id" element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} />
 
 
+        <Route path="/startup/matched-investors" element={<ProtectedRoutes><MatchedInvestors /></ProtectedRoutes>} />
+        <Route path="/navbar" element={<ProtectedRoutes><Navbar /></ProtectedRoutes>} />
 
-        
+
+
+        <Route path="/chats" element={<ProtectedRoutes><ChatList /></ProtectedRoutes>} />
+        <Route path="/chat/:roomId" element={<ProtectedRoutes><ChatWindow /></ProtectedRoutes>} />
+
+
+
         <Route path="*" element={<NotFound />} />
       </Routes>
       {/* <Register/> */}
