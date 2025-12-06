@@ -1,4 +1,8 @@
 import Request from '../models/Request.js';
+import { generateRoomId } from "../utils/createRoom.js";
+
+
+
 const sendRequest = async (req, res) => {
     try {
       const startupId=req.userId;
@@ -10,9 +14,10 @@ const sendRequest = async (req, res) => {
         if (requestExist) {
             return res.status(400).json({ message: "The request is already exist" });
         }
-        const createRequest = await Request.create({ investorId, startupId });
-        return res.status(201).json({ message: "Request created successfully", data: createRequest });
-    }
+       // ✅ save roomId along with the request
+    const createRequest = await Request.create({ investorId, startupId, roomId });
+
+    return res.status(201).json({ message: "Request created successfully", data: createRequest });}
     catch (err) {
         return res.status(500).json({ message: "Server Error" })
     }

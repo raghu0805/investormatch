@@ -12,11 +12,26 @@ const requestSchema = new mongoose.Schema(
       ref: "InvestorProfile",
       required: true,
     },
+
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
       default: "pending",
     },
+
+    roomId: {
+      type: String,
+      default: null,
+    },
+    blocked: {
+  type: Boolean,
+  default: false
+},
+blockedBy: {
+  type: mongoose.Schema.Types.ObjectId,  // user who blocked
+  ref: "User",
+  default: null
+} ,
   },
   { timestamps: true }
 );
