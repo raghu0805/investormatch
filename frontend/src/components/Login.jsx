@@ -30,7 +30,7 @@ const handleGoogleLogin = async (response) => {
       name: user.name,
       picture: user.picture,
     });
-    console.log(res)
+    console.log("login credentials:",res)
 
     // If login success
     login(res.data.token, res.data.user.role);

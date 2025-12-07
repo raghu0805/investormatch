@@ -13,7 +13,8 @@ export default function ChatList() {
     const loadChats = async () => {
       try {
         const res = await api.get("/chats");
-        setChats(res.data); // Ensure backend returns proper list
+        setChats(res.data); 
+        console.log(res.data);// Ensure backend returns proper list
       } catch (error) {
         console.log(error);
       }

@@ -12,6 +12,7 @@ export default function InvestorDashboard() {
     try {
       const res = await api.get("/investor/me");
       setProfile(res.data.investorProfile || res.data.data);
+      
     } catch (err) {
 if (err.response?.status === 404) {
   setProfile(null);

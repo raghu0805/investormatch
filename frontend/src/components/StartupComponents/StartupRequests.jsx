@@ -12,6 +12,8 @@ export default function StartupRequests() {
     try {
       const res = await api.get("/request/sent");
       const data = res.data.data;
+      // alert(data);
+      console.log(data);
 
       if (!data) {
         setRequests([]);
@@ -25,6 +27,7 @@ export default function StartupRequests() {
       console.log("Error fetching requests:", err);
     }
     setLoading(false);
+    console.log(requests)
   };
 
   useEffect(() => {

@@ -9,7 +9,7 @@ export default function InvestorRequests() {
   const fetchRequests = async () => {
     try {
       const res = await api.get("/request/received");
-      console.log(res);
+      console.log("request from the investorRequests:",res);
       setRequests(res.data.data || []);
     } catch (err) {
       console.log("Error fetching requests:", err);

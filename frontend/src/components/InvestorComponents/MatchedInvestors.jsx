@@ -9,20 +9,19 @@ export default function MatchedInvestors() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [requestStatus, setRequestStatus] = useState(false);
+  
   const handleSendRequest = async (investorId) => {
     try {
+      // alert(investorId);
       await api.post("/request/send", { investorId });
-
       setRequestStatus(!requestStatus);
       toast.success("Request sent successfully");
     } catch (err) {
-
-      toast.error(err.response?.data?.message || "Failed to send request");
+      toast.error("message:",err.response?.data?.message || "Failed to send request");
     }
   };
 
-
-const fetchMatches = async () => {
+  const fetchMatches = async () => {
   try {
     const res = await api.get("/startup/match-investors");
 

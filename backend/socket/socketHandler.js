@@ -1,9 +1,10 @@
 import Message from "../models/Message.js";
-
+import User from "../models/User.js"
 export default function socketHandler(io) {
   io.on("connection", (socket) => {
     socket.userId = socket.handshake.query.userId;
     io.emit("online", { userId: socket.userId });
+    
     console.log("New user connected:", socket.id);
     // User joins a chat room
     socket.on("joinRoom", async (roomId) => {
@@ -33,18 +34,18 @@ export default function socketHandler(io) {
           message,
         });
 
-         // Check if blocked
-  const reqObj = await Request.findOne({
-    roomId
-  });
+        // Check if blocked
+        const reqObj = await Request.findOne({
+          roomId
+        });
 
-  if (reqObj.blocked) {
-    // If the sender is the blocked person
-    if (reqObj.blockedBy.toString() !== senderId) {
-      socket.emit("blockedError", { message: "You cannot send messages to this user." });
-      return;
-    }
-  }
+        if (reqObj.blocked) {
+          // If the sender is the blocked person
+          if (reqObj.blockedBy.toString() !== senderId) {
+            socket.emit("blockedError", { message: "You cannot send messages to this user." });
+            return;
+          }
+        }
         socket.emit("delivered", newMessage._id);
         // 2. Emit message to both users in the room (real-time)
         io.to(roomId).emit("receiveMessage", newMessage);
@@ -53,20 +54,20 @@ export default function socketHandler(io) {
       }
     });
 
-socket.on("typing", ({ roomId, userName }) => {
-  socket.to(roomId).emit("showTyping", userName);
-});
+    socket.on("typing", ({ roomId, userName }) => {
+      socket.to(roomId).emit("showTyping", userName);
+    });
 
-socket.on("reactMessage", ({ roomId, messageId, emoji, userId }) => {
-  socket.to(roomId).emit("reactMessage", { messageId, emoji, userId });
-});
+    socket.on("reactMessage", ({ roomId, messageId, emoji, userId }) => {
+      socket.to(roomId).emit("reactMessage", { messageId, emoji, userId });
+    });
 
 
-// User left
-socket.on("disconnect", () => {
+    // User left
+    socket.on("disconnect", () => {
       User.updateOne({ _id: socket.userId }, { lastSeen: new Date() });
       console.log("User disconnected:", socket.id);
-       io.emit("offline", { userId: socket.userId });
+      io.emit("offline", { userId: socket.userId });
     });
   });
 }
