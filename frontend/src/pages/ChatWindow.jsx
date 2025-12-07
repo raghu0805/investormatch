@@ -1,27 +1,48 @@
 // src/components/ChatWindow.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "../utils/api";
 import socket from "../socket";
 
 export default function ChatWindow({ roomId, currentUserId, otherUser }) {
   const [text, setText] = useState("");
   const [messages, setMessages] = useState([]);
+  const bottomRef = useRef(null);
 
-  // 1️⃣ Load previous messages when room changes
+  // 1️⃣ Load previous messages + update lastSeen
   useEffect(() => {
-    const loadHistory = async () => {
+    const load = async () => {
       try {
         const res = await api.get(`/messages/${roomId}`);
         setMessages(res.data);
+
+        await api.post("/messages/update-last-seen", {
+          roomId,
+          userId: currentUserId,
+        });
       } catch (err) {
         console.error("Error loading history:", err);
       }
     };
 
-    loadHistory();
+    load();
+  }, [roomId, currentUserId]);
+
+  // 2️⃣ Join room when roomId changes
+  useEffect(() => {
+    console.log("🔵 Joining room:", roomId);
+    socket.emit("join-room", roomId);
+
+    return () => {
+      socket.emit("leave-room", roomId);
+    };
   }, [roomId]);
 
-  // 2️⃣ Receive realtime messages
+  // 3️⃣ Auto-scroll on new messages
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 4️⃣ Receive realtime messages (only once)
   useEffect(() => {
     const handleNewMessage = (msg) => {
       if (msg.roomId === roomId) {
@@ -36,7 +57,7 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
     };
   }, [roomId]);
 
-  // 3️⃣ Sending message
+  // 5️⃣ Send message
   const send = async () => {
     if (!text.trim()) return;
 
@@ -46,18 +67,22 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
       senderId: currentUserId,
     };
 
-    // Save to DB
-    await api.post("/messages", data);
+    // // Save to DB
+    // await api.post("/messages", data);
 
-    // Notify realtime listeners
+    // Send realtime
     socket.emit("send-message", data);
-
     setText("");
+  };
+
+  // 6️⃣ Format time
+  const formatTime = (date) => {
+    const d = new Date(date);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
   return (
     <div className="h-full flex flex-col">
-      
       {/* HEADER */}
       <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-3 bg-slate-900/60">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center font-semibold text-sm">
@@ -76,7 +101,7 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
       </div>
 
       {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-slate-950">
+      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-2 bg-slate-950">
         {messages.length === 0 && (
           <p className="text-xs text-slate-500 text-center mt-4">
             No messages yet. Say hi 👋
@@ -98,13 +123,19 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
                 }`}
               >
                 {msg.text}
+
+                <div className="text-[9px] text-slate-300 mt-1 text-right">
+                  {formatTime(msg.createdAt)}
+                </div>
               </div>
             </div>
           );
         })}
+
+        <div ref={bottomRef} />
       </div>
 
-      {/* INPUT BAR */}
+      {/* INPUT */}
       <div className="px-3 py-3 border-t border-slate-800 bg-slate-900/80 flex gap-2">
         <input
           className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500"

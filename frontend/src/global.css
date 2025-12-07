@@ -43,3 +43,14 @@
 .role-btn:hover {
   background-color: #b30000; /* darker red */
 }
+
+
+/* Hide scrollbar for Chrome, Edge, Safari */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.no-scrollbar {
+  scrollbar-width: none;
+}

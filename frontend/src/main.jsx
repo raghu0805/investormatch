@@ -1,4 +1,4 @@
-import { StrictMode } from 'react'
+// import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
 import './global.css'
@@ -12,10 +12,10 @@ createRoot(document.getElementById('root')).render(
   <GoogleOAuthProvider clientId="230231015330-8mb8t6hv76vdkeccuu8n29g51i3kb3fn.apps.googleusercontent.com">
     <DataContext>
       <BrowserRouter>
-        <StrictMode>
+        {/* <StrictMode> */}
           <App />
           <Toaster />
-        </StrictMode>,
+        {/* </StrictMode>, */}
       </BrowserRouter>
     </DataContext>
   </GoogleOAuthProvider>

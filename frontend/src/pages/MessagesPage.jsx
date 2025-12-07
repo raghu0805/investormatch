@@ -1,36 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import ChatWindow from "./ChatWindow";
 import api from "../utils/api";
-
 function generateRoomId(id1, id2) {
+  if (!id1 || !id2) return null;
   return [id1, id2].sort().join("_");
 }
 
 export default function MessagesPage() {
-  const currentUserId = localStorage.getItem("userId") || "startup123";
-
-  const [activeTab, setActiveTab] = useState("accepted"); // accepted | sent | interest
+  const currentUserId = localStorage.getItem("userId");
+  const [activeTab, setActiveTab] = useState("accepted");
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
-
   const [acceptedUsers, setAcceptedUsers] = useState([]);
   const [sentUsers, setSentUsers] = useState([]);
   const [interestUsers, setInterestUsers] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  /** Pick correct user list based on active tab */
   const usersByTab = useMemo(() => {
     if (activeTab === "accepted") return acceptedUsers;
     if (activeTab === "sent") return sentUsers;
     return interestUsers;
   }, [activeTab, acceptedUsers, sentUsers, interestUsers]);
-
-  /** Search filter */
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return usersByTab;
-
     const q = search.toLowerCase();
     return usersByTab.filter(
       (u) =>
@@ -39,19 +31,23 @@ export default function MessagesPage() {
         u.subtitle?.toLowerCase().includes(q)
     );
   }, [search, usersByTab]);
-
-  /** Compute roomId when a user is selected */
   const activeRoomId = useMemo(() => {
     if (!selectedUser) return null;
     return generateRoomId(currentUserId, selectedUser._id);
   }, [currentUserId, selectedUser]);
-
-  /** Handle user click from list */
-  const handleUserClick = (user) => {
+  const handleUserClick =async (user) => {
     setSelectedUser(user);
-  };
+      await api.post("/messages/update-last-seen", {
+    roomId: generateRoomId(currentUserId, user._id),
+    userId: currentUserId,
+  });
 
-  /** Sidebar tab button style */
+  // remove unread badge immediately in UI
+  user.unread = 0;
+  setAcceptedUsers([...acceptedUsers]);
+  setSentUsers([...sentUsers]);
+  setInterestUsers([...interestUsers]);
+  };
   const tabClasses = (tab) =>
     "w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-medium cursor-pointer transition " +
     (activeTab === tab
@@ -160,7 +156,6 @@ export default function MessagesPage() {
               No users in this category.
             </p>
           )}
-
           {!loading &&
             !error &&
             filteredUsers.map((user) => {
@@ -171,34 +166,51 @@ export default function MessagesPage() {
                   .join("")
                   .toUpperCase()
                   .slice(0, 2) || "?";
-
               const isActive = selectedUser?._id === user._id;
-
               return (
-                <button
-                  key={user._id}
-                  onClick={() => handleUserClick(user)}
-                  className={
-                    "w-full flex items-center gap-3 px-4 py-3 text-left transition " +
-                    (isActive ? "bg-slate-800/90" : "hover:bg-slate-900/70")
-                  }
-                >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center text-[11px] font-semibold">
-                    {initials}
-                  </div>
+     <button
+  key={user._id}
+  onClick={() => handleUserClick(user)}
+  className={
+    "w-full flex items-center gap-3 px-4 py-3 text-left transition " +
+    (isActive ? "bg-slate-800/90" : "hover:bg-slate-900/70")
+  }
+>
+  {/* Avatar */}
+  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center text-[11px] font-semibold">
+    {initials}
+  </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">{user.name}</p>
-                      <span className="text-[10px] text-slate-500">
-                        {user.role}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-400 truncate">
-                      {user.subtitle}
-                    </p>
-                  </div>
-                </button>
+  {/* User info */}
+  <div className="flex-1 flex flex-col">
+    {/* TOP ROW: Name + Time */}
+    <div className="flex items-center justify-between">
+      <p className="text-sm font-medium">{user.name}</p>
+
+      <span className="text-[10px] text-slate-500">
+        {user.lastMessageTime
+          ? new Date(user.lastMessageTime).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })
+          : ""}
+      </span>
+    </div>
+
+    {/* BOTTOM ROW: Last message + Unread badge */}
+    <div className="flex items-center justify-between">
+      <p className="text-xs text-slate-400 truncate flex-1">
+        {user.lastMessage || user.subtitle}
+      </p>
+
+      {user.unread > 0 && (
+        <span className="ml-2 bg-emerald-600 text-white text-[10px] px-2 py-[2px] rounded-full">
+          {user.unread}
+        </span>
+      )}
+    </div>
+  </div>
+</button>
               );
             })}
         </div>

@@ -17,54 +17,33 @@ import LandingPage from "./components/LandingPage";
 import InvestorFullProfile from "./components/InvestorComponents/InvestorFullProfile";
 
 import NotFound from "./components/NotFound";
-// import ChatList from "./pages/Chatlist";
+
 import ChatWindow from "./pages/ChatWindow";
-import ChatWindows from "./pages/ChatWindows";
-import ChatPage from "./pages/ChatPage";
 import MessagesPage from "./pages/MessagesPage";
-
 function App() {
-
   return (
     <>
       <Routes>
-
-
         <Route path="/" element={<LandingPage />}></Route>
         <Route path="/login" element={<Login />}></Route>
-
         <Route path="/signup" element={<Register />}></Route>
-
         <Route path="/startup/dashboard" element={<ProtectedRoutes><StartupDashboard /> </ProtectedRoutes>}></Route>
         <Route path="/startup/create" element={<ProtectedRoutes><CreateStartupProfile /> </ProtectedRoutes>}></Route>
         <Route path="/startup/edit" element={<ProtectedRoutes><EditStartupProfile /> </ProtectedRoutes>}></Route>
         <Route path="/startup/request" element={<ProtectedRoutes><StartupRequests /> </ProtectedRoutes>}></Route>
-
         <Route path="/investor/dashboard" element={<ProtectedRoutes><InvestorDashboard /></ProtectedRoutes>} />
         <Route path="/investor/create-profile" element={<ProtectedRoutes><CreateInvestorProfile /></ProtectedRoutes>} />
         <Route path="/investor/edit-profile" element={<ProtectedRoutes><EditInvestorProfile /></ProtectedRoutes>} />
         <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests /> </ProtectedRoutes>}></Route>
-
         <Route path="/investor/profile/:id" element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} />
-
-
         <Route path="/startup/matched-investors" element={<ProtectedRoutes><MatchedInvestors /></ProtectedRoutes>} />
         <Route path="/navbar" element={<ProtectedRoutes><Navbar /></ProtectedRoutes>} />
-
-
-
-        {/* <Route path="/chats" element={<ProtectedRoutes><ChatList /></ProtectedRoutes>} /> */}
         <Route path="/chat" element={<ProtectedRoutes><ChatWindow /></ProtectedRoutes>} />
-        <Route path="/chats" element={<ProtectedRoutes><ChatPage/></ProtectedRoutes>} />
         <Route path="/msg" element={<ProtectedRoutes><MessagesPage/></ProtectedRoutes>} />
-
-
-
         <Route path="*" element={<NotFound />} />
       </Routes>
-      {/* <Register/> */}
+
     </>
   )
 }
-
 export default App;
