@@ -17,8 +17,11 @@ import LandingPage from "./components/LandingPage";
 import InvestorFullProfile from "./components/InvestorComponents/InvestorFullProfile";
 
 import NotFound from "./components/NotFound";
-import ChatList from "./pages/Chatlist";
+// import ChatList from "./pages/Chatlist";
 import ChatWindow from "./pages/ChatWindow";
+import ChatWindows from "./pages/ChatWindows";
+import ChatPage from "./pages/ChatPage";
+import MessagesPage from "./pages/MessagesPage";
 
 function App() {
 
@@ -50,8 +53,10 @@ function App() {
 
 
 
-        <Route path="/chats" element={<ProtectedRoutes><ChatList /></ProtectedRoutes>} />
-        <Route path="/chat/:roomId" element={<ProtectedRoutes><ChatWindow /></ProtectedRoutes>} />
+        {/* <Route path="/chats" element={<ProtectedRoutes><ChatList /></ProtectedRoutes>} /> */}
+        <Route path="/chat" element={<ProtectedRoutes><ChatWindow /></ProtectedRoutes>} />
+        <Route path="/chats" element={<ProtectedRoutes><ChatPage/></ProtectedRoutes>} />
+        <Route path="/msg" element={<ProtectedRoutes><MessagesPage/></ProtectedRoutes>} />
 
 
 

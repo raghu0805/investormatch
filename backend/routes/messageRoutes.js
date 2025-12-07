@@ -1,12 +1,11 @@
 import express from "express";
-import authMiddleware from "../middleware/authMiddleware.js";
-import { LoadChatHistroy,deleteMessage, updateMessage } from "../controllers/messageController.js";
+import Message from "../models/Message.js";
+import auth from "../middleware/authMiddleware.js";
+import { createMessage, loadMessages } from "../controllers/messageController.js";
 
-const router=express.Router();
+const router = express.Router();
 
-router.get("/:roomId",authMiddleware,LoadChatHistroy);
-router.delete("/:roomId",authMiddleware,deleteMessage);
-router.put("/react/:id",authMiddleware,updateMessage);
-
+router.get("/:roomId", auth, loadMessages);
+router.post("/", auth, createMessage);
 
 export default router;

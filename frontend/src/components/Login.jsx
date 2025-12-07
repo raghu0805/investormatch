@@ -35,6 +35,7 @@ const handleGoogleLogin = async (response) => {
     // If login success
     login(res.data.token, res.data.user.role);
     localStorage.setItem("role", res.data.user.role);
+    localStorage.setItem("userId", res.data.user._id);
 
     toast.success("Login Successful");
 

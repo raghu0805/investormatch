@@ -1,5 +1,4 @@
-export function generateRoomId(user1, user2) {
-  return user1 < user2 
-    ? `${user1}_${user2}` 
-    : `${user2}_${user1}`;
+export function generateRoomId(userA, userB) {
+  const pair = [userA, userB].sort(); 
+  return `${pair[0]}_${pair[1]}`;
 }
