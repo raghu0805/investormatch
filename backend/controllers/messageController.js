@@ -1,5 +1,9 @@
 import Message from "../models/Message.js";
 import ChatStatus from "../models/ChatStatus.js";
+
+/* --------------------------------------------------------
+   LOAD MESSAGE HISTORY
+--------------------------------------------------------- */
 export const loadMessages = async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -13,6 +17,9 @@ export const loadMessages = async (req, res) => {
   }
 };
 
+/* --------------------------------------------------------
+   CREATE MESSAGE (HTTP POST)
+--------------------------------------------------------- */
 export const createMessage = async (req, res) => {
   try {
     const { roomId, text, senderId } = req.body;
@@ -21,6 +28,7 @@ export const createMessage = async (req, res) => {
       roomId,
       text,
       senderId,
+      // ⛔ status removed
     });
 
     return res.status(201).json(msg);
@@ -29,14 +37,17 @@ export const createMessage = async (req, res) => {
     return res.status(500).json({ message: "Failed to send message" });
   }
 };
+
+/* --------------------------------------------------------
+   SAVE MESSAGE FROM SOCKET.IO
+--------------------------------------------------------- */
 export const saveMessageFromSocket = async (data) => {
   try {
-    const { roomId, text, senderId } = data;
-
     const msg = await Message.create({
-      roomId,
-      text,
-      senderId,
+      roomId: data.roomId,
+      text: data.text,
+      senderId: data.senderId,
+      // ⛔ no status
     });
 
     return msg;
@@ -45,22 +56,30 @@ export const saveMessageFromSocket = async (data) => {
     return null;
   }
 };
+
+/* --------------------------------------------------------
+   UPDATE LAST SEEN (used for unread count)
+--------------------------------------------------------- */
 export const updateLastSeen = async (req, res) => {
   try {
     const { roomId, userId } = req.body;
-    await ChatStatus.findOneAndUpdate({ roomId, userId }, {
-      lastSeen: new Date()
-    }, { upsert: true });
+
+    await ChatStatus.findOneAndUpdate(
+      { roomId, userId },
+      { lastSeen: new Date() },
+      { upsert: true }
+    );
 
     return res.json({ success: true });
-
-
-  } catch (error) {
+  } catch (err) {
     console.error("Error updating lastSeen:", err);
     res.status(500).json({ message: "Failed to update seen status" });
-
   }
-}
+};
+
+/* --------------------------------------------------------
+   GET UNREAD COUNT (still required)
+--------------------------------------------------------- */
 export const getUnreadCount = async (user1, user2) => {
   const roomId = [user1, user2].sort().join("_");
 
@@ -70,8 +89,9 @@ export const getUnreadCount = async (user1, user2) => {
   const unread = await Message.countDocuments({
     roomId,
     createdAt: { $gt: lastSeen },
-    senderId: user2, // only unread if sent by other user
+    senderId: user2,
   });
 
   return unread;
 };
+

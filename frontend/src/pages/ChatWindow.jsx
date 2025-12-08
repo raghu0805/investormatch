@@ -1,91 +1,157 @@
 // src/components/ChatWindow.jsx
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import api from "../utils/api";
 import socket from "../socket";
 
-export default function ChatWindow({ roomId, currentUserId, otherUser }) {
+export default function ChatWindow({ roomId, currentUserId, otherUser, forceReload }) {
   const [text, setText] = useState("");
   const [messages, setMessages] = useState([]);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+
   const bottomRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
-  // 1️⃣ Load previous messages + update lastSeen
+  const formatTime = (date) => {
+    if (!date) return "";
+    return new Date(date).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  /* ---------------------------------------------------
+      1) JOIN ROOM + LOAD HISTORY
+  ----------------------------------------------------- */
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await api.get(`/messages/${roomId}`);
-        setMessages(res.data);
+    if (!roomId) return;
 
-        await api.post("/messages/update-last-seen", {
-          roomId,
-          userId: currentUserId,
-        });
-      } catch (err) {
-        console.error("Error loading history:", err);
-      }
-    };
-
-    load();
-  }, [roomId, currentUserId]);
-
-  // 2️⃣ Join room when roomId changes
-  useEffect(() => {
-    console.log("🔵 Joining room:", roomId);
     socket.emit("join-room", roomId);
 
-    return () => {
-      socket.emit("leave-room", roomId);
+    const loadMessages = async () => {
+      try {
+        const res = await api.get(`/messages/${roomId}`);
+        setMessages(res.data || []);
+      } catch (err) {
+        console.error("Load history error:", err);
+      }
     };
+
+    loadMessages();
+  }, [roomId, forceReload]);
+
+  /* ---------------------------------------------------
+      2) AUTO REFRESH EVERY 1 SECOND (WHATSAPP STYLE)
+  ----------------------------------------------------- */
+  useEffect(() => {
+    if (!roomId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/messages/${roomId}`);
+        setMessages(res.data || []);
+      } catch (err) {
+        console.error("Auto refresh error:", err);
+      }
+    }, 1000); // refresh every 1 second
+
+    return () => clearInterval(interval);
   }, [roomId]);
 
-  // 3️⃣ Auto-scroll on new messages
+  /* ---------------------------------------------------
+      3) RECEIVE NEW MESSAGES (real-time socket)
+  ----------------------------------------------------- */
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    socket.off("new-message");
 
-  // 4️⃣ Receive realtime messages (only once)
-  useEffect(() => {
     const handleNewMessage = (msg) => {
-      if (msg.roomId === roomId) {
-        setMessages((prev) => [...prev, msg]);
-      }
+      if (msg.roomId !== roomId) return;
+      setMessages((prev) => [...prev, msg]);
     };
 
     socket.on("new-message", handleNewMessage);
 
-    return () => {
-      socket.off("new-message", handleNewMessage);
-    };
+    return () => socket.off("new-message", handleNewMessage);
   }, [roomId]);
 
-  // 5️⃣ Send message
-  const send = async () => {
+  /* ---------------------------------------------------
+      4) AUTO SCROLL
+  ----------------------------------------------------- */
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  /* ---------------------------------------------------
+      5) TYPING INDICATOR
+  ----------------------------------------------------- */
+  useEffect(() => {
+    socket.off("typing");
+    socket.off("stop-typing");
+
+    const handleTyping = ({ roomId: rId, senderId }) => {
+      if (rId !== roomId || senderId === currentUserId) return;
+
+      setIsOtherTyping(true);
+
+      clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        setIsOtherTyping(false);
+      }, 3000);
+    };
+
+    const handleStopTyping = ({ roomId: rId, senderId }) => {
+      if (rId === roomId && senderId !== currentUserId) {
+        setIsOtherTyping(false);
+      }
+    };
+
+    socket.on("typing", handleTyping);
+    socket.on("stop-typing", handleStopTyping);
+
+    return () => {
+      socket.off("typing", handleTyping);
+      socket.off("stop-typing", handleStopTyping);
+    };
+  }, [roomId, currentUserId]);
+
+  /* ---------------------------------------------------
+      6) SEND MESSAGE
+  ----------------------------------------------------- */
+  const send = () => {
     if (!text.trim()) return;
 
-    const data = {
+    socket.emit("send-message", {
       roomId,
       text,
       senderId: currentUserId,
-    };
+    });
 
-    // // Save to DB
-    // await api.post("/messages", data);
+    socket.emit("stop-typing", { roomId, senderId: currentUserId });
 
-    // Send realtime
-    socket.emit("send-message", data);
     setText("");
   };
 
-  // 6️⃣ Format time
-  const formatTime = (date) => {
-    const d = new Date(date);
-    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  /* ---------------------------------------------------
+      7) HANDLE TYPING
+  ----------------------------------------------------- */
+  const handleChange = (e) => {
+    const val = e.target.value;
+    setText(val);
+
+    if (!val.trim()) {
+      socket.emit("stop-typing", { roomId, senderId: currentUserId });
+    } else {
+      socket.emit("typing", { roomId, senderId: currentUserId });
+    }
   };
 
+  /* ---------------------------------------------------
+      UI
+  ----------------------------------------------------- */
   return (
     <div className="h-full flex flex-col">
       {/* HEADER */}
-      <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-3 bg-slate-900/60">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center font-semibold text-sm">
+      <div className="px-4 py-3 border-b border-slate-800 bg-slate-900/60 flex gap-3 items-center">
+        <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-sky-500 rounded-full flex items-center justify-center font-semibold">
           {otherUser.name
             ?.split(" ")
             .map((p) => p[0])
@@ -96,25 +162,19 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
 
         <div>
           <p className="text-sm font-semibold">{otherUser.name}</p>
-          <p className="text-xs text-slate-500">Chat Room</p>
+          <p className="text-xs text-slate-500">
+            {isOtherTyping ? "Typing…" : "Online"}
+          </p>
         </div>
       </div>
 
       {/* MESSAGES */}
-      <div className="flex-1 overflow-y-auto no-scrollbar px-4 py-3 space-y-2 bg-slate-950">
-        {messages.length === 0 && (
-          <p className="text-xs text-slate-500 text-center mt-4">
-            No messages yet. Say hi 👋
-          </p>
-        )}
-
-        {messages.map((msg, index) => {
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-slate-950">
+        {messages.map((msg, i) => {
           const isMe = msg.senderId === currentUserId;
+
           return (
-            <div
-              key={index}
-              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-            >
+            <div key={i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
               <div
                 className={`max-w-[70%] px-3 py-2 rounded-2xl text-xs ${
                   isMe
@@ -124,7 +184,7 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
               >
                 {msg.text}
 
-                <div className="text-[9px] text-slate-300 mt-1 text-right">
+                <div className="text-[9px] text-slate-300 mt-1 flex justify-end">
                   {formatTime(msg.createdAt)}
                 </div>
               </div>
@@ -136,18 +196,18 @@ export default function ChatWindow({ roomId, currentUserId, otherUser }) {
       </div>
 
       {/* INPUT */}
-      <div className="px-3 py-3 border-t border-slate-800 bg-slate-900/80 flex gap-2">
+      <div className="px-3 py-2 border-t border-slate-800 bg-slate-900/80 flex gap-2">
         <input
-          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm outline-none focus:border-emerald-500"
+          className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm outline-none"
           placeholder={`Message ${otherUser.name.split(" ")[0]}…`}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleChange}
           onKeyDown={(e) => e.key === "Enter" && send()}
         />
 
         <button
           onClick={send}
-          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-xs font-semibold transition"
+          className="px-4 py-2 rounded-xl bg-emerald-600 text-xs font-semibold"
         >
           Send
         </button>

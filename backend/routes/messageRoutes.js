@@ -9,4 +9,5 @@ router.get("/:roomId", auth, loadMessages);
 router.post("/", auth, createMessage);
 router.post("/update-last-seen",auth,updateLastSeen)
 
+
 export default router;

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import ChatWindow from "./ChatWindow";
 import api from "../utils/api";
+import socket from "../socket";
+
 function generateRoomId(id1, id2) {
   if (!id1 || !id2) return null;
   return [id1, id2].sort().join("_");
@@ -8,19 +10,27 @@ function generateRoomId(id1, id2) {
 
 export default function MessagesPage() {
   const currentUserId = localStorage.getItem("userId");
+
   const [activeTab, setActiveTab] = useState("accepted");
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
+
   const [acceptedUsers, setAcceptedUsers] = useState([]);
   const [sentUsers, setSentUsers] = useState([]);
   const [interestUsers, setInterestUsers] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Forces ChatWindow to refresh history
+  const [forceReload, setForceReload] = useState(Date.now());
+
   const usersByTab = useMemo(() => {
     if (activeTab === "accepted") return acceptedUsers;
     if (activeTab === "sent") return sentUsers;
     return interestUsers;
   }, [activeTab, acceptedUsers, sentUsers, interestUsers]);
+
   const filteredUsers = useMemo(() => {
     if (!search.trim()) return usersByTab;
     const q = search.toLowerCase();
@@ -31,35 +41,47 @@ export default function MessagesPage() {
         u.subtitle?.toLowerCase().includes(q)
     );
   }, [search, usersByTab]);
+
   const activeRoomId = useMemo(() => {
     if (!selectedUser) return null;
     return generateRoomId(currentUserId, selectedUser._id);
   }, [currentUserId, selectedUser]);
-  const handleUserClick =async (user) => {
-    setSelectedUser(user);
-      await api.post("/messages/update-last-seen", {
-    roomId: generateRoomId(currentUserId, user._id),
-    userId: currentUserId,
-  });
 
-  // remove unread badge immediately in UI
-  user.unread = 0;
-  setAcceptedUsers([...acceptedUsers]);
-  setSentUsers([...sentUsers]);
-  setInterestUsers([...interestUsers]);
+  /* -----------------------------------------------------------
+     CLICK USER → OPEN CHAT + RESET UNREAD + FORCE CHAT RELOAD
+  ------------------------------------------------------------ */
+  const handleUserClick = async (user) => {
+    setSelectedUser(user);
+
+    const roomId = generateRoomId(currentUserId, user._id);
+
+    await api.post("/messages/update-last-seen", {
+      roomId,
+      userId: currentUserId,
+    });
+
+    user.unread = 0;
+
+    setAcceptedUsers([...acceptedUsers]);
+    setSentUsers([...sentUsers]);
+    setInterestUsers([...interestUsers]);
+
+    setForceReload(Date.now());
   };
+
   const tabClasses = (tab) =>
     "w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-medium cursor-pointer transition " +
     (activeTab === tab
       ? "bg-emerald-500 text-slate-950"
       : "bg-slate-800/80 text-slate-300 hover:bg-slate-700");
 
-  /** Fetch chat users from backend */
+  /* -----------------------------------------------------------
+      LOAD USER LIST ON PAGE OPEN
+  ------------------------------------------------------------ */
   useEffect(() => {
     const fetchChatUsers = async () => {
       try {
         setLoading(true);
-        setError(null);
 
         const res = await api.get("/chat/users");
 
@@ -77,36 +99,70 @@ export default function MessagesPage() {
     fetchChatUsers();
   }, []);
 
+  /* -----------------------------------------------------------
+      🔥 REAL-TIME SIDEBAR SUBTITLE UPDATE (WhatsApp style)
+  ------------------------------------------------------------ */
+  useEffect(() => {
+    socket.off("new-message");
+
+    socket.on("new-message", (msg) => {
+      const { roomId, text, createdAt } = msg;
+
+      // find the other user ID
+      const otherId = roomId
+        .split("_")
+        .filter((id) => id !== currentUserId)[0];
+
+      // Update list helper function
+      const updateList = (list, setList) => {
+        const updated = list.map((u) =>
+          u._id === otherId
+            ? {
+                ...u,
+                lastMessage: text,
+                lastMessageTime: createdAt,
+                unread:
+                  selectedUser?._id === otherId
+                    ? 0
+                    : (u.unread || 0) + 1,
+              }
+            : u
+        );
+        setList(updated);
+      };
+
+      updateList(acceptedUsers, setAcceptedUsers);
+      updateList(sentUsers, setSentUsers);
+      updateList(interestUsers, setInterestUsers);
+    });
+
+    return () => socket.off("new-message");
+  }, [
+    acceptedUsers,
+    sentUsers,
+    interestUsers,
+    selectedUser,
+    currentUserId,
+  ]);
+
   return (
     <div className="h-screen bg-slate-950 text-slate-100 flex">
-      {/* LEFT: sidebar tabs */}
+      {/* LEFT: Icons */}
       <aside className="w-16 md:w-20 border-r border-slate-800 flex flex-col items-center py-4 gap-6">
         <div className="text-xs font-semibold tracking-wide text-slate-400">
           Chats
         </div>
 
         <div className="flex flex-col gap-3">
-          <div
-            className={tabClasses("accepted")}
-            title="Accepted users"
-            onClick={() => setActiveTab("accepted")}
-          >
+          <div className={tabClasses("accepted")} onClick={() => setActiveTab("accepted")}>
             ✓
           </div>
 
-          <div
-            className={tabClasses("sent")}
-            title="Requests sent"
-            onClick={() => setActiveTab("sent")}
-          >
+          <div className={tabClasses("sent")} onClick={() => setActiveTab("sent")}>
             →
           </div>
 
-          <div
-            className={tabClasses("interest")}
-            title="Same interest"
-            onClick={() => setActiveTab("interest")}
-          >
+          <div className={tabClasses("interest")} onClick={() => setActiveTab("interest")}>
             ✦
           </div>
         </div>
@@ -114,9 +170,8 @@ export default function MessagesPage() {
         <div className="mt-auto text-[10px] text-slate-500">{currentUserId}</div>
       </aside>
 
-      {/* MIDDLE: chat list */}
+      {/* MIDDLE: USER LIST */}
       <section className="w-72 md:w-80 border-r border-slate-800 flex flex-col">
-        {/* header */}
         <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
           <h2 className="text-sm font-semibold">
             {activeTab === "accepted"
@@ -131,108 +186,92 @@ export default function MessagesPage() {
           </span>
         </div>
 
-        {/* search box */}
         <div className="px-3 py-2 border-b border-slate-800">
           <input
-            className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-xs outline-none focus:border-emerald-500"
+            className="w-full bg-slate-900/80 border border-slate-700 rounded-xl px-3 py-2 text-xs outline-none"
             placeholder="Search users…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
-        {/* user list */}
         <div className="flex-1 overflow-y-auto">
-          {loading && (
-            <p className="px-4 py-4 text-xs text-slate-500">Loading users…</p>
-          )}
-
-          {error && (
-            <p className="px-4 py-4 text-xs text-rose-400">{error}</p>
-          )}
-
+          {loading && <p className="px-4 py-4 text-xs text-slate-500">Loading users…</p>}
+          {error && <p className="px-4 py-4 text-xs text-rose-400">{error}</p>}
           {!loading && !error && filteredUsers.length === 0 && (
-            <p className="px-4 py-4 text-xs text-slate-500">
-              No users in this category.
-            </p>
+            <p className="px-4 py-4 text-xs text-slate-500">No users in this category.</p>
           )}
+
           {!loading &&
             !error &&
             filteredUsers.map((user) => {
-              const initials =
-                user.name
-                  ?.split(" ")
-                  .map((p) => p[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2) || "?";
+              const initials = user.name
+                ?.split(" ")
+                .map((p) => p[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
+
               const isActive = selectedUser?._id === user._id;
+
               return (
-     <button
-  key={user._id}
-  onClick={() => handleUserClick(user)}
-  className={
-    "w-full flex items-center gap-3 px-4 py-3 text-left transition " +
-    (isActive ? "bg-slate-800/90" : "hover:bg-slate-900/70")
-  }
->
-  {/* Avatar */}
-  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center text-[11px] font-semibold">
-    {initials}
-  </div>
+                <button
+                  key={user._id}
+                  onClick={() => handleUserClick(user)}
+                  className={
+                    "w-full flex items-center gap-3 px-4 py-3 text-left transition " +
+                    (isActive ? "bg-slate-800/90" : "hover:bg-slate-900/70")
+                  }
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-sky-500 flex items-center justify-center text-[11px] font-semibold">
+                    {initials}
+                  </div>
 
-  {/* User info */}
-  <div className="flex-1 flex flex-col">
-    {/* TOP ROW: Name + Time */}
-    <div className="flex items-center justify-between">
-      <p className="text-sm font-medium">{user.name}</p>
+                  <div className="flex-1 flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <span className="text-[10px] text-slate-500">
+                        {user.lastMessageTime
+                          ? new Date(user.lastMessageTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : ""}
+                      </span>
+                    </div>
 
-      <span className="text-[10px] text-slate-500">
-        {user.lastMessageTime
-          ? new Date(user.lastMessageTime).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : ""}
-      </span>
-    </div>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-slate-400 truncate flex-1">
+                        {user.lastMessage || user.subtitle}
+                      </p>
 
-    {/* BOTTOM ROW: Last message + Unread badge */}
-    <div className="flex items-center justify-between">
-      <p className="text-xs text-slate-400 truncate flex-1">
-        {user.lastMessage || user.subtitle}
-      </p>
-
-      {user.unread > 0 && (
-        <span className="ml-2 bg-emerald-600 text-white text-[10px] px-2 py-[2px] rounded-full">
-          {user.unread}
-        </span>
-      )}
-    </div>
-  </div>
-</button>
+                      {user.unread > 0 && (
+                        <span className="ml-2 bg-emerald-600 text-white text-[10px] px-2 py-[2px] rounded-full">
+                          {user.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </button>
               );
             })}
         </div>
       </section>
 
-      {/* RIGHT: chat window */}
+      {/* RIGHT: CHAT WINDOW */}
       <main className="flex-1 flex flex-col">
         {selectedUser && activeRoomId ? (
           <ChatWindow
             roomId={activeRoomId}
             currentUserId={currentUserId}
             otherUser={selectedUser}
+            forceReload={forceReload}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-slate-500">
             <div className="text-4xl mb-3">💬</div>
-            <p className="text-sm font-medium mb-1">
-              Select a user to start chat
-            </p>
-            <p className="text-xs text-slate-500">
-              Choose from accepted, sent, or same-interest users.
-            </p>
+            <p className="text-sm font-medium mb-1">Select a user to start chat</p>
+            <p className="text-xs text-slate-500">Choose from accepted, sent, or same-interest users.</p>
           </div>
         )}
       </main>
