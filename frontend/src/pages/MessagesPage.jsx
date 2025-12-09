@@ -167,7 +167,7 @@ export default function MessagesPage() {
           </div>
         </div>
 
-        <div className="mt-auto text-[10px] text-slate-500">{currentUserId}</div>
+        {/* <div className="mt-auto text-[10px] text-slate-500">{currentUserId} </div> */}
       </aside>
 
       {/* MIDDLE: USER LIST */}
@@ -200,8 +200,7 @@ export default function MessagesPage() {
           {error && <p className="px-4 py-4 text-xs text-rose-400">{error}</p>}
           {!loading && !error && filteredUsers.length === 0 && (
             <p className="px-4 py-4 text-xs text-slate-500">No users in this category.</p>
-          )}
-
+          )};
           {!loading &&
             !error &&
             filteredUsers.map((user) => {

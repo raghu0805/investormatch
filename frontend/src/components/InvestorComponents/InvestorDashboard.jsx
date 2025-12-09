@@ -100,6 +100,19 @@ if (err.response?.status === 404) {
           >
             Edit Profile
           </button>
+                  <button
+          onClick={() => navigate("/msg")}
+          className="
+            fixed bottom-6 right-6 
+            bg-emerald-600 hover:bg-emerald-500 
+            text-white rounded-full shadow-lg shadow-emerald-800/40 
+            w-14 h-14 flex items-center justify-center 
+            text-2xl font-bold 
+            transition transform hover:scale-110
+          "
+        >
+          💬
+        </button>
         </div>
       )}
 
