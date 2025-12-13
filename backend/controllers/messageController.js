@@ -7,8 +7,13 @@ import ChatStatus from "../models/ChatStatus.js";
 export const loadMessages = async (req, res) => {
   try {
     const { roomId } = req.params;
+    if (!roomId) {
+      return res.status(400).json({ message: "roomId is required" });
+    }
 
-    const messages = await Message.find({ roomId }).sort({ createdAt: 1 });
+    const messages = await Message
+      .find({ roomId })
+      .sort({ createdAt: 1 });
 
     return res.json(messages);
   } catch (err) {
@@ -24,11 +29,14 @@ export const createMessage = async (req, res) => {
   try {
     const { roomId, text, senderId } = req.body;
 
+    if (!roomId || !text?.trim() || !senderId) {
+      return res.status(400).json({ message: "Invalid message data" });
+    }
+
     const msg = await Message.create({
       roomId,
-      text,
+      text: text.trim(),
       senderId,
-      // ⛔ status removed
     });
 
     return res.status(201).json(msg);
@@ -41,13 +49,16 @@ export const createMessage = async (req, res) => {
 /* --------------------------------------------------------
    SAVE MESSAGE FROM SOCKET.IO
 --------------------------------------------------------- */
-export const saveMessageFromSocket = async (data) => {
+export const saveMessageFromSocket = async ({ roomId, text, senderId }) => {
   try {
+    if (!roomId || !text?.trim() || !senderId) {
+      return null;
+    }
+
     const msg = await Message.create({
-      roomId: data.roomId,
-      text: data.text,
-      senderId: data.senderId,
-      // ⛔ no status
+      roomId,
+      text: text.trim(),
+      senderId,
     });
 
     return msg;
@@ -58,27 +69,31 @@ export const saveMessageFromSocket = async (data) => {
 };
 
 /* --------------------------------------------------------
-   UPDATE LAST SEEN (used for unread count)
+   UPDATE LAST SEEN (for unread logic)
 --------------------------------------------------------- */
 export const updateLastSeen = async (req, res) => {
   try {
     const { roomId, userId } = req.body;
 
+    if (!roomId || !userId) {
+      return res.status(400).json({ message: "Invalid data" });
+    }
+
     await ChatStatus.findOneAndUpdate(
       { roomId, userId },
       { lastSeen: new Date() },
-      { upsert: true }
+      { upsert: true, new: true }
     );
 
     return res.json({ success: true });
   } catch (err) {
     console.error("Error updating lastSeen:", err);
-    res.status(500).json({ message: "Failed to update seen status" });
+    return res.status(500).json({ message: "Failed to update seen status" });
   }
 };
 
 /* --------------------------------------------------------
-   GET UNREAD COUNT (still required)
+   GET UNREAD COUNT (used in sidebar)
 --------------------------------------------------------- */
 export const getUnreadCount = async (user1, user2) => {
   const roomId = [user1, user2].sort().join("_");
@@ -88,10 +103,9 @@ export const getUnreadCount = async (user1, user2) => {
 
   const unread = await Message.countDocuments({
     roomId,
-    createdAt: { $gt: lastSeen },
     senderId: user2,
+    createdAt: { $gt: lastSeen },
   });
 
   return unread;
 };
-

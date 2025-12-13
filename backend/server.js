@@ -25,10 +25,10 @@ const PORT = process.env.PORT || 5000;
 // Middlewares
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
 app.use(express.json());
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
+// app.use((req, res, next) => {
+//   req.io = io;
+//   next();
+// });
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -61,11 +61,7 @@ const io = new Server(server, {
 // Socket connection
 io.on("connection", (socket) => {
   console.log("✅ New client connected:", socket.id);
-
-  // socket.on("join-room",roomId=>{
-  //   console.log("User joined room:",roomId);
-  //   socket.join(roomId);
-  // })
+  
   socket.on("disconnect", () => {
     console.log("❌ Client disconnected:", socket.id);
   });

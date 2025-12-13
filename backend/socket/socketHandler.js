@@ -7,32 +7,46 @@ export default function socketHandler(io) {
 
     /* ---------------------------------------------------
        JOIN ROOM
-    ----------------------------------------------------- */
+    --------------------------------------------------- */
     socket.on("join-room", (roomId) => {
+      if (!roomId) return;
       console.log("🏠 User joined room:", roomId);
       socket.join(roomId);
     });
 
     /* ---------------------------------------------------
-       SEND MESSAGE (NO TICKS)
-    ----------------------------------------------------- */
-    socket.on("send-message", async (data) => {
-      console.log("📥 Incoming message:", data);
-
-      const saved = await saveMessageFromSocket(data);
-
-      if (!saved) {
-        console.log("❌ Message not saved");
-        return;
-      }
-
-      // Broadcast saved message
-      io.to(data.roomId).emit("new-message", saved);
+       LEAVE ROOM (IMPORTANT)
+    --------------------------------------------------- */
+    socket.on("leave-room", (roomId) => {
+      if (!roomId) return;
+      console.log("🚪 User left room:", roomId);
+      socket.leave(roomId);
     });
 
     /* ---------------------------------------------------
-       TYPING INDICATOR ONLY
-    ----------------------------------------------------- */
+       SEND MESSAGE
+    --------------------------------------------------- */ 
+    socket.on("send-message", async (data) => {
+      try {
+        console.log("📥 Incoming message:", data);
+
+        const savedMessage = await saveMessageFromSocket(data);
+
+        if (!savedMessage) {
+          console.log("❌ Message not saved");
+          return;
+        }
+
+        // Emit to everyone in room (including sender)
+        io.to(data.roomId).emit("new-message", savedMessage);
+      } catch (err) {
+        console.error("❌ Socket send-message error:", err);
+      }
+    });
+
+    /* ---------------------------------------------------
+       TYPING INDICATOR
+    --------------------------------------------------- */
     socket.on("typing", ({ roomId, senderId }) => {
       socket.to(roomId).emit("typing", { roomId, senderId });
     });
@@ -42,15 +56,11 @@ export default function socketHandler(io) {
     });
 
     /* ---------------------------------------------------
-       REMOVE delivered / seen / ticks
-       (No ack-delivered, no messages-seen)
-    ----------------------------------------------------- */
-
-    /* ---------------------------------------------------
        DISCONNECT
-    ----------------------------------------------------- */
+    --------------------------------------------------- */
     socket.on("disconnect", () => {
       console.log("🔴 Client disconnected:", socket.id);
     });
   });
 }
+ 

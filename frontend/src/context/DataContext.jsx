@@ -13,11 +13,9 @@ const DataContext = ({ children }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("role", role);
   };
-
   const logout = () => {
     setToken(null);
     setRole(null);
-
     localStorage.removeItem("token");
     localStorage.removeItem("role");
   };

@@ -3,7 +3,12 @@ import { useEffect, useState, useRef } from "react";
 import api from "../utils/api";
 import socket from "../socket";
 
-export default function ChatWindow({ roomId, currentUserId, otherUser, forceReload }) {
+export default function ChatWindow({
+  roomId,
+  currentUserId,
+  otherUser,
+  forceReload,
+}) {
   const [text, setText] = useState("");
   const [messages, setMessages] = useState([]);
   const [isOtherTyping, setIsOtherTyping] = useState(false);
@@ -20,8 +25,8 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
   };
 
   /* ---------------------------------------------------
-      1) JOIN ROOM + LOAD HISTORY
-  ----------------------------------------------------- */
+     1) JOIN ROOM + LOAD MISSED MESSAGES (IMPORTANT FIX)
+  --------------------------------------------------- */
   useEffect(() => {
     if (!roomId) return;
 
@@ -32,7 +37,7 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
         const res = await api.get(`/messages/${roomId}`);
         setMessages(res.data || []);
       } catch (err) {
-        console.error("Load history error:", err);
+        console.error("Load messages error:", err);
       }
     };
 
@@ -40,53 +45,29 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
   }, [roomId, forceReload]);
 
   /* ---------------------------------------------------
-      2) AUTO REFRESH EVERY 1 SECOND (WHATSAPP STYLE)
-  ----------------------------------------------------- */
+     2) REAL-TIME MESSAGE RECEIVE (SOCKET ONLY)
+  --------------------------------------------------- */
   useEffect(() => {
-    if (!roomId) return;
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await api.get(`/messages/${roomId}`);
-        setMessages(res.data || []);
-      } catch (err) {
-        console.error("Auto refresh error:", err);
-      }
-    }, 1000); // refresh every 1 second
-
-    return () => clearInterval(interval);
-  }, [roomId]);
-
-  /* ---------------------------------------------------
-      3) RECEIVE NEW MESSAGES (real-time socket)
-  ----------------------------------------------------- */
-  useEffect(() => {
-    socket.off("new-message");
-
     const handleNewMessage = (msg) => {
       if (msg.roomId !== roomId) return;
       setMessages((prev) => [...prev, msg]);
     };
 
     socket.on("new-message", handleNewMessage);
-
     return () => socket.off("new-message", handleNewMessage);
   }, [roomId]);
 
   /* ---------------------------------------------------
-      4) AUTO SCROLL
-  ----------------------------------------------------- */
+     3) AUTO SCROLL
+  --------------------------------------------------- */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   /* ---------------------------------------------------
-      5) TYPING INDICATOR
-  ----------------------------------------------------- */
+     4) TYPING INDICATOR
+  --------------------------------------------------- */
   useEffect(() => {
-    socket.off("typing");
-    socket.off("stop-typing");
-
     const handleTyping = ({ roomId: rId, senderId }) => {
       if (rId !== roomId || senderId === currentUserId) return;
 
@@ -114,8 +95,8 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
   }, [roomId, currentUserId]);
 
   /* ---------------------------------------------------
-      6) SEND MESSAGE
-  ----------------------------------------------------- */
+     5) SEND MESSAGE
+  --------------------------------------------------- */
   const send = () => {
     if (!text.trim()) return;
 
@@ -126,13 +107,12 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
     });
 
     socket.emit("stop-typing", { roomId, senderId: currentUserId });
-
     setText("");
   };
 
   /* ---------------------------------------------------
-      7) HANDLE TYPING
-  ----------------------------------------------------- */
+     6) HANDLE TYPING
+  --------------------------------------------------- */
   const handleChange = (e) => {
     const val = e.target.value;
     setText(val);
@@ -145,8 +125,8 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
   };
 
   /* ---------------------------------------------------
-      UI
-  ----------------------------------------------------- */
+     UI
+  --------------------------------------------------- */
   return (
     <div className="h-full flex flex-col">
       {/* HEADER */}
@@ -174,7 +154,10 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
           const isMe = msg.senderId === currentUserId;
 
           return (
-            <div key={i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+            <div
+              key={i}
+              className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+            >
               <div
                 className={`max-w-[70%] px-3 py-2 rounded-2xl text-xs ${
                   isMe
@@ -183,7 +166,6 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
                 }`}
               >
                 {msg.text}
-
                 <div className="text-[9px] text-slate-300 mt-1 flex justify-end">
                   {formatTime(msg.createdAt)}
                 </div>
@@ -191,7 +173,6 @@ export default function ChatWindow({ roomId, currentUserId, otherUser, forceRelo
             </div>
           );
         })}
-
         <div ref={bottomRef} />
       </div>
 
