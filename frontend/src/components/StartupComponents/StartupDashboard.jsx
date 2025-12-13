@@ -102,7 +102,7 @@ export default function StartupDashboard() {
 
         {/* 🔥 Floating Message Button */}
         <button
-          onClick={() => navigate("/msg")}
+          onClick={() => navigate("/messages")}
           className="
             fixed bottom-6 right-6 
             bg-emerald-600 hover:bg-emerald-500 

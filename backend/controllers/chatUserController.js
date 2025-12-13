@@ -9,25 +9,40 @@ export const getChatUsers = async (req, res) => {
   try {
     const loggedInUserId = req.userId;
 
+    if (!loggedInUserId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     const me = await User.findById(loggedInUserId);
+    if (!me) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
     const isStartup = me.role === "startup";
 
-    // Convert StartupProfile / InvestorProfile ➝ simple user object
+    /* ---------------------------------------------------
+       HELPERS
+    --------------------------------------------------- */
+
     const convertProfileToUser = (profile, roleLabel, subtitle) => {
-      if (!profile || !profile.userId) return null;
+      if (!profile || !profile.userId || !profile.userId._id) return null;
 
       return {
-        _id: profile.userId._id,
-        name: roleLabel === "startup" ? profile.startupName : profile.investorName,
+        _id: profile.userId._id.toString(),
+        name:
+          roleLabel === "startup"
+            ? profile.startupName
+            : profile.investorName,
         role: roleLabel,
         subtitle,
       };
     };
 
-    // --------------------------
-    // LAST MESSAGE HELPER
-    // --------------------------
     const getLastMessage = async (user1, user2) => {
+      if (!user1 || !user2) {
+        return { lastMessage: "No messages yet", lastMessageTime: null };
+      }
+
       const roomId = [user1, user2].sort().join("_");
 
       const lastMsg = await Message.findOne({ roomId })
@@ -40,139 +55,179 @@ export const getChatUsers = async (req, res) => {
       };
     };
 
-    // --------------------------
-    // UNREAD HELPER
-    // --------------------------
     const getUnreadCount = async (user1, user2) => {
+      if (!user1 || !user2) return 0;
+
       const roomId = [user1, user2].sort().join("_");
 
-      const status = await ChatStatus.findOne({ userId: user1, roomId });
+      const status = await ChatStatus.findOne({
+        userId: user1,
+        roomId,
+      });
+
       const lastSeen = status?.lastSeen || new Date(0);
 
-      const unread = await Message.countDocuments({
+      return Message.countDocuments({
         roomId,
         senderId: user2,
         createdAt: { $gt: lastSeen },
       });
-
-      return unread;
     };
 
-    // --------------------------
-    // ACCEPTED USERS
-    // --------------------------
+    /* ---------------------------------------------------
+       FETCH LOGGED-IN PROFILE
+    --------------------------------------------------- */
 
-    const accepted = [];
-    const acceptedRequests = await Request.find({ status: "accepted" })
-      .populate("startupId")
-      .populate("investorId");
+    let myStartupProfile = null;
+    let myInvestorProfile = null;
 
-    for (const reqDoc of acceptedRequests) {
-      const startupProfile = await Startup.findById(reqDoc.startupId).populate("userId");
-      const investorProfile = await Investor.findById(reqDoc.investorId).populate("userId");
-
-      if (!startupProfile || !investorProfile) continue;
-
-      // When logged-in user is the STARTUP
-      if (String(startupProfile.userId._id) === loggedInUserId) {
-        const obj = convertProfileToUser(investorProfile, "investor", "Accepted request");
-        if (obj) {
-          const last = await getLastMessage(loggedInUserId, obj._id);
-const unread = await getUnreadCount(loggedInUserId, obj._id);
-accepted.push({ ...obj, ...last, unread });
-        }
+    if (isStartup) {
+      myStartupProfile = await Startup.findOne({ userId: loggedInUserId });
+      if (!myStartupProfile) {
+        return res.json({ accepted: [], sent: [], interest: [] });
       }
-
-      // When logged-in user is the INVESTOR
-      if (String(investorProfile.userId._id) === loggedInUserId) {
-        const obj = convertProfileToUser(startupProfile, "startup", "Accepted request");
-        if (obj) {
-          const last = await getLastMessage(loggedInUserId, obj._id);
-const unread = await getUnreadCount(loggedInUserId, obj._id);
-accepted.push({ ...obj, ...last, unread });
-        }
+    } else {
+      myInvestorProfile = await Investor.findOne({ userId: loggedInUserId });
+      if (!myInvestorProfile) {
+        return res.json({ accepted: [], sent: [], interest: [] });
       }
     }
 
-    // --------------------------
-    // SENT USERS (pending)
-    // --------------------------
+    /* ---------------------------------------------------
+       ACCEPTED USERS
+    --------------------------------------------------- */
+
+    const accepted = [];
+
+    const acceptedRequests = await Request.find({
+      status: "accepted",
+      ...(isStartup
+        ? { startupId: myStartupProfile._id }
+        : { investorId: myInvestorProfile._id }),
+    });
+
+    for (const reqDoc of acceptedRequests) {
+      const startupProfile = await Startup.findById(
+        reqDoc.startupId
+      ).populate("userId");
+
+      const investorProfile = await Investor.findById(
+        reqDoc.investorId
+      ).populate("userId");
+
+      if (
+        !startupProfile?.userId ||
+        !investorProfile?.userId
+      ) {
+        continue;
+      }
+
+      if (isStartup) {
+        const obj = convertProfileToUser(
+          investorProfile,
+          "investor",
+          "Accepted request"
+        );
+        if (!obj) continue;
+
+        const last = await getLastMessage(loggedInUserId, obj._id);
+        const unread = await getUnreadCount(loggedInUserId, obj._id);
+
+        accepted.push({ ...obj, ...last, unread });
+      } else {
+        const obj = convertProfileToUser(
+          startupProfile,
+          "startup",
+          "Accepted request"
+        );
+        if (!obj) continue;
+
+        const last = await getLastMessage(loggedInUserId, obj._id);
+        const unread = await getUnreadCount(loggedInUserId, obj._id);
+
+        accepted.push({ ...obj, ...last, unread });
+      }
+    }
+
+    /* ---------------------------------------------------
+       SENT / PENDING USERS
+    --------------------------------------------------- */
 
     const sent = [];
 
-    if (isStartup) {
-      const pending = await Request.find({ status: "pending" }).populate("investorId");
+    const pendingRequests = await Request.find({
+      status: "pending",
+      ...(isStartup
+        ? { startupId: myStartupProfile._id }
+        : { investorId: myInvestorProfile._id }),
+    });
 
-      for (const reqDoc of pending) {
-        const profile = await Investor.findById(reqDoc.investorId).populate("userId");
-        if (!profile) continue;
+    for (const reqDoc of pendingRequests) {
+      const profile = isStartup
+        ? await Investor.findById(reqDoc.investorId).populate("userId")
+        : await Startup.findById(reqDoc.startupId).populate("userId");
 
-        const obj = convertProfileToUser(profile, "investor", "Request sent");
-        if (obj) {
-          const last = await getLastMessage(loggedInUserId, obj._id);
-          const unread = await getUnreadCount(loggedInUserId, obj._id);
-          sent.push({ ...obj, ...last, unread });
-        }
-      }
-    } else {
-      const pending = await Request.find({ status: "pending" }).populate("startupId");
+      if (!profile?.userId) continue;
 
-      for (const reqDoc of pending) {
-        const profile = await Startup.findById(reqDoc.startupId).populate("userId");
-        if (!profile) continue;
+      const obj = convertProfileToUser(
+        profile,
+        isStartup ? "investor" : "startup",
+        isStartup ? "Request sent" : "Request received"
+      );
 
-        const obj = convertProfileToUser(profile, "startup", "Request received");
-        if (obj) {
-          const last = await getLastMessage(loggedInUserId, obj._id);
-          const unread = await getUnreadCount(loggedInUserId, obj._id);
-          sent.push({ ...obj, ...last, unread });
-        }
-      }
+      if (!obj) continue;
+
+      const last = await getLastMessage(loggedInUserId, obj._id);
+      const unread = await getUnreadCount(loggedInUserId, obj._id);
+
+      sent.push({ ...obj, ...last, unread });
     }
 
-    // --------------------------
-    // INTEREST USERS
-    // --------------------------
+    /* ---------------------------------------------------
+       INTEREST USERS
+    --------------------------------------------------- */
 
     const interest = [];
 
     if (isStartup) {
-      const myStartup = await Startup.findOne({ userId: loggedInUserId });
+      const investors = await Investor.find({
+        preferredIndustries: myStartupProfile.industry,
+      }).populate("userId");
 
-      if (myStartup) {
-        const investors = await Investor.find({
-          preferredIndustries: myStartup.industry,
-        }).populate("userId");
+      for (const inv of investors) {
+        if (!inv?.userId || String(inv.userId._id) === loggedInUserId) continue;
 
-        for (const inv of investors) {
-          if (!inv?.userId || String(inv.userId._id) === loggedInUserId) continue;
+        const obj = convertProfileToUser(
+          inv,
+          "investor",
+          "Similar interest"
+        );
+        if (!obj) continue;
 
-          const obj = convertProfileToUser(inv, "investor", "Similar interest");
-          if (obj) {
-            const last = await getLastMessage(loggedInUserId, obj._id);
-            const unread = await getUnreadCount(loggedInUserId, obj._id);
-            interest.push({ ...obj, ...last, unread });
-          }
-        }
+        const last = await getLastMessage(loggedInUserId, obj._id);
+        const unread = await getUnreadCount(loggedInUserId, obj._id);
+
+        interest.push({ ...obj, ...last, unread });
       }
     } else {
-      const myInvestor = await Investor.findOne({ userId: loggedInUserId });
+      const startups = await Startup.find({
+        industry: { $in: myInvestorProfile.preferredIndustries },
+      }).populate("userId");
 
-      if (myInvestor) {
-        const startups = await Startup.find({
-          industry: { $in: myInvestor.preferredIndustries },
-        }).populate("userId");
+      for (const st of startups) {
+        if (!st?.userId || String(st.userId._id) === loggedInUserId) continue;
 
-        for (const st of startups) {
-          if (!st?.userId || String(st.userId._id) === loggedInUserId) continue;
+        const obj = convertProfileToUser(
+          st,
+          "startup",
+          "Similar interest"
+        );
+        if (!obj) continue;
 
-          const obj = convertProfileToUser(st, "startup", "Similar interest");
-          if (obj) {
-            const last = await getLastMessage(loggedInUserId, obj._id);
-            const unread = await getUnreadCount(loggedInUserId, obj._id);
-            interest.push({ ...obj, ...last, unread });
-          }
-        }
+        const last = await getLastMessage(loggedInUserId, obj._id);
+        const unread = await getUnreadCount(loggedInUserId, obj._id);
+
+        interest.push({ ...obj, ...last, unread });
       }
     }
 

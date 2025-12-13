@@ -22,11 +22,38 @@ export default function MessagesPage() {
   const [sentUsers, setSentUsers] = useState([]);
   const [interestUsers, setInterestUsers] = useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // 🔑 Used ONLY to reload chat history when reopening chat
+  // used to reload chat history when reopening chat
   const [forceReload, setForceReload] = useState(Date.now());
+
+  /* ---------------------------------------------------
+     FETCH USERS (RUNS ON PAGE LOAD + TAB CHANGE)
+     Works with your backend response:
+     { accepted, sent, interest }
+  --------------------------------------------------- */
+  useEffect(() => {
+    const fetchChatUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await api.get("/chat/users");
+
+        setAcceptedUsers(res.data.accepted || []);
+        setSentUsers(res.data.sent || []);
+        setInterestUsers(res.data.interest || []);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load chat users");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChatUsers();
+  }, [activeTab]);
 
   /* ---------------------------------------------------
      DERIVED DATA
@@ -54,29 +81,6 @@ export default function MessagesPage() {
   }, [currentUserId, selectedUser]);
 
   /* ---------------------------------------------------
-     LOAD CHAT USERS (ON PAGE LOAD)
-  --------------------------------------------------- */
-  useEffect(() => {
-    const fetchChatUsers = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get("/chat/users");
-
-        setAcceptedUsers(res.data.accepted || []);
-        setSentUsers(res.data.sent || []);
-        setInterestUsers(res.data.interest || []);
-      } catch (err) {
-        console.error("Error loading chat users:", err);
-        setError("Failed to load users");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchChatUsers();
-  }, []);
-
-  /* ---------------------------------------------------
      CLICK USER → OPEN CHAT + RESET UNREAD
   --------------------------------------------------- */
   const handleUserClick = async (user) => {
@@ -84,13 +88,13 @@ export default function MessagesPage() {
 
     const roomId = generateRoomId(currentUserId, user._id);
 
-    // update last seen (backend unread logic)
+    // update last seen (backend)
     await api.post("/messages/update-last-seen", {
       roomId,
       userId: currentUserId,
     });
 
-    // reset unread locally (UI)
+    // reset unread locally
     const resetUnread = (setList) => {
       setList((prev) =>
         prev.map((u) =>
@@ -103,13 +107,11 @@ export default function MessagesPage() {
     resetUnread(setSentUsers);
     resetUnread(setInterestUsers);
 
-    // 🔑 force ChatWindow to reload history
     setForceReload(Date.now());
   };
 
   /* ---------------------------------------------------
-     🔥 REAL-TIME SIDEBAR UPDATE (Socket)
-     (This does NOT load messages — only sidebar info)
+     REAL-TIME SIDEBAR UPDATE (SOCKET)
   --------------------------------------------------- */
   useEffect(() => {
     const handleNewMessage = (msg) => {
@@ -181,7 +183,9 @@ export default function MessagesPage() {
               ? "Requests Sent"
               : "Same Interest"}
           </h2>
-          <span className="text-[11px] text-slate-500">{filteredUsers.length} users</span>
+          <span className="text-[11px] text-slate-500">
+            {filteredUsers.length} users
+          </span>
         </div>
 
         <div className="px-3 py-2 border-b border-slate-800">
