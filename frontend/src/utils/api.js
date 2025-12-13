@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api=axios.create({
-    baseURL:"https://investmatch-backend.onrender.com/api"
+    baseURL:"https://investormatch-backend-yn2k.onrender.com/api"
 });
 
 api.interceptors.request.use((config)=>{
