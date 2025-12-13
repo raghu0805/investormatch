@@ -23,7 +23,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
-app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use(cors({ origin:["http://localhost:5173",
+      "https://investmatch.me",
+      "https://www.investmatch.me",], credentials: true }));
 app.use(express.json());
 // app.use((req, res, next) => {
 //   req.io = io;
@@ -52,11 +54,15 @@ const server = http.createServer(app);
 // SOCKET.IO FIXED CONFIG
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: [
+      "https://investmatch.me",
+      "https://www.investmatch.me"
+    ],
     methods: ["GET", "POST"],
     credentials: true
   }
 });
+
 
 // Socket connection
 io.on("connection", (socket) => {
