@@ -39,16 +39,16 @@ export function Register() {
 
         setGoogleData(res.data);
         setShowRoleSelect(true);
-        // try {
-        //   const res2 = await axios.post("http://localhost:5678/webhook/9aef9400-6eb1-4251-8dab-2c73c827b143", {
-        //     name: res.data.name,
-        //     email: res.data.email,
-        //   });
+        try {
+          const res2 = await axios.post("https://n8ninvestormatch.tech/webhook/1a2410ec-574d-4c77-bda8-4fa3950c0549", {
+            name: res.data.name,
+            email: res.data.email,
+          });
 
-        //   console.log("n8n response:", res2.data);
-        // } catch (err) {
-        //   console.error(err);
-        // }
+          console.log("n8n response:", res2.data);
+        } catch (err) {
+          console.error(err);
+        }
       }
     }
     catch (err) {
