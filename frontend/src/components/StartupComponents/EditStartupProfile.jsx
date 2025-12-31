@@ -42,7 +42,7 @@ export default function EditStartupProfile() {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
 
       <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
         <div className="bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-2xl">

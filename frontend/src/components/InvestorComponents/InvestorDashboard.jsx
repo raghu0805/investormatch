@@ -8,19 +8,21 @@ export default function InvestorDashboard() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchProfile = async () => {
-    try {
-      const res = await api.get("/investor/me");
-      setProfile(res.data.investorProfile || res.data.data);
-      
-    } catch (err) {
-if (err.response?.status === 404) {
-  setProfile(null);
-}
+const fetchProfile = async () => {
+  setLoading(true); 
 
+  try {
+    const res = await api.get("/investor/me");
+    setProfile(res.data.investorProfile || res.data.data);
+  } catch (err) {
+    if (err.response?.status === 404) {
+      setProfile(null); 
     }
-    setLoading(false);
-  };
+  } finally {
+    setLoading(false); 
+  }
+};
+
   
 
   useEffect(() => {
@@ -32,7 +34,7 @@ if (err.response?.status === 404) {
 
   return (
 <>
-  <Navbar />
+  {/* <Navbar /> */}
 
   <div className="min-h-screen bg-gray-900 text-white p-6">
     <div className="max-w-3xl mx-auto">

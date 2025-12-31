@@ -2,19 +2,35 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navbar from "./Navbar";
 import NewsFeedSection from "./NewsFeedSection";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/DataContext";
+import api from "../utils/api";
 
 export default function LandingPage() {
   const navigate = useNavigate();
-      const { token, role } = useContext(AuthContext);
-
+  const { token, role } = useContext(AuthContext);
+  const [News,SetNews]=useState(null);
   
     // useEffect(() => {
     //   if (token && role) {
     //     navigate(`/${role}/dashboard`);
     //   }
     // }, [token, role, navigate]);
+
+useEffect(() => {
+  const fetchNews = async () => {
+    try {
+      const apiUrl = import.meta.env.VITE_N8N_NEWS_URL;
+      const result = await api.get(apiUrl);
+      console.log(result.data);
+      SetNews(result.data);
+    } catch (err) {
+      console.error("Error fetching news:", err);
+    }
+  };
+  fetchNews();
+}, []);
+
   
   return (
     <>
@@ -117,7 +133,7 @@ export default function LandingPage() {
 
       </div>
     </div>
-        <NewsFeedSection/>
+        <NewsFeedSection news={News}/>
     </>
   );
 }

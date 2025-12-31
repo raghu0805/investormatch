@@ -38,7 +38,7 @@ export default function StartupDashboard() {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
 
       <div className="relative min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white px-6 py-10">
         {/* Header */}

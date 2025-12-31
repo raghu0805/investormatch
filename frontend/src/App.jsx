@@ -18,6 +18,7 @@ import InvestorFullProfile from "./components/InvestorComponents/InvestorFullPro
 import NotFound from "./components/NotFound";
 
 import MessagesPage from "./pages/MessagesPage";
+import Layout from "./components/InvestorComponents/Layout";
 
 function App() {
   return (
@@ -26,7 +27,23 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Register />} />
 
-      <Route
+
+      <Route element={<Layout />}>
+      {/* Startup Pages */}
+      <Route path="/startup/dashboard" element={<ProtectedRoutes><StartupDashboard /></ProtectedRoutes>} />
+      <Route path="/startup/create" element={<ProtectedRoutes><CreateStartupProfile /></ProtectedRoutes>} />
+      <Route path="/startup/edit" element={<ProtectedRoutes><EditStartupProfile /></ProtectedRoutes>} />
+      <Route path="/startup/request" element={<ProtectedRoutes><StartupRequests /></ProtectedRoutes>} />
+      <Route path="/startup/matched-investors" element={<ProtectedRoutes><MatchedInvestors /></ProtectedRoutes>} />
+      {/* Investor Pages */}
+      <Route path="/investor/dashboard" element={<ProtectedRoutes><InvestorDashboard /></ProtectedRoutes>} />
+      <Route path="/investor/create-profile" element={<ProtectedRoutes><CreateInvestorProfile /></ProtectedRoutes>} />
+      <Route path="/investor/edit-profile" element={<ProtectedRoutes><EditInvestorProfile /></ProtectedRoutes>} />
+      <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests /></ProtectedRoutes>} />
+      <Route path="/investor/profile/:id" element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} />
+</Route>
+
+      {/* <Route
         path="/startup/dashboard"
         element={<ProtectedRoutes><StartupDashboard /></ProtectedRoutes>}
       />
@@ -65,8 +82,8 @@ function App() {
       />
       <Route
         path="/investor/profile/:id"
-        element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>}
-      />
+        element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} 
+      />*/}
 
       {/* ✅ ONLY chat page */}
       <Route

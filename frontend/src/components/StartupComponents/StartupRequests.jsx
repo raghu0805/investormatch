@@ -44,7 +44,7 @@ export default function StartupRequests() {
 
   return (
     <>
-      <Navbar />
+      {/* <Navbar /> */}
 
       <div className="min-h-screen bg-gray-900 text-white p-6">
         <h1 className="text-3xl font-bold mb-6 text-center">Sent Requests</h1>
