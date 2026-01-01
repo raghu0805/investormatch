@@ -6,78 +6,40 @@ import cors from 'cors'
 import authRoutes from './routes/authRoutes.js';
 import startupRoutes from './routes/startupRoutes.js';
 import investorRoutes from './routes/investorRoutes.js';
-import chatRoutes from "./routes/chatRoutes.js";
 import connectDB from './config/db.js';
-import "./crons/deleteOldMessages.js";
-import socketHandler from './socket/socketHandler.js';
 import requestRoutes from "./routes/requestRoutes.js";
-
-import http from "http";
-import { Server } from "socket.io";
-import messageRoutes from "./routes/messageRoutes.js";
-
+import http from 'http';
+import {Server} from 'socket.io';
 dotenv.config();
 connectDB();
-
 const app = express();
 const PORT = process.env.PORT || 5000;
+const server=http.createServer(app);
+const io=new Server(server,{
+  cors:{origin:"http://localhost:5173"}
+})
+
+
 
 // Middlewares
-app.use(cors({ 
-     origin:[
-      "http://localhost:5173",
-      "https://investmatch.me",
-      "https://www.investmatch.me",
-    ],
-     credentials: true }));
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://investmatch.me",
+    "https://www.investmatch.me",
+  ],
+  credentials: true
+}));
 app.use(express.json());
-// app.use((req, res, next) => {
-//   req.io = io;
-//   next();
-// });
-
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/startup", startupRoutes);
 app.use("/api/investor", investorRoutes);
-
 app.use("/api/request", requestRoutes);
-app.use("/api/messages", messageRoutes);
-
-app.use("/api/chat",chatRoutes);
-
 app.use("/uploads", express.static("uploads"));
-
 app.get("/", (req, res) => {
   res.json({ message: "get route" });
 });
-
-// Create HTTP server
-const server = http.createServer(app);
-
-// SOCKET.IO FIXED CONFIG
-const io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://investmatch.me",
-      "https://www.investmatch.me"
-    ],
-    methods: ["GET", "POST"],
-    credentials: true
-  }
-});
-
-// Socket connection
-io.on("connection", (socket) => {
-  console.log("✅ New client connected:", socket.id);
-  
-  socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
-  });
-});
-socketHandler(io);
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
-

@@ -25,7 +25,9 @@ export default function MatchedInvestors() {
   try {
     const res = await api.get("/startup/match-investors");
 
-    setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
+    // setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
+    setMatches(res.data.matches || []);
+
 
     if (res.data.topInvestor) {
       const investorId = res.data.topInvestor._id;
@@ -77,6 +79,8 @@ export default function MatchedInvestors() {
                 className="bg-gray-700 p-6 rounded-xl shadow-lg border border-gray-600"
               >
                 <h2 className="text-xl font-bold mb-3">{investor.investorName}</h2>
+                <p><strong>Match:</strong> {(investor.similarity * 100).toFixed(0)}%</p>
+
 
                 <p><strong>Type:</strong> {investor.investorType.toUpperCase()}</p>
                 <p><strong>Location:</strong> {investor.location}</p>

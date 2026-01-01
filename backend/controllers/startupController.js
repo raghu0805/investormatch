@@ -1,5 +1,53 @@
 import Startup from '../models/StartupProfile.js';
 import Investor from '../models/InvestorProfile.js';
+import { cosineSimilarity } from "../utils/cosineSimilarity.js";
+
+const matchInvestors = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // 1️⃣ Get startup with embedding
+    const startup = await Startup.findOne({
+      userId,
+      embeddingStatus: "completed"
+    });
+
+    if (!startup) {
+      return res.status(400).json({
+        message: "Startup embedding not ready"
+      });
+    }
+
+    // 2️⃣ Fetch eligible investors
+    const investors = await Investor.find({
+      embeddingStatus: "completed",
+      minimumInvestment: { $lte: startup.fundingNeeded },
+      maximumInvestment: { $gte: startup.fundingNeeded }
+    });
+
+    // 3️⃣ Rank using cosine similarity
+    const rankedInvestors = investors.map(inv => ({
+      ...inv.toObject(),
+      similarity: cosineSimilarity(startup.embedding, inv.embedding)
+    }));
+
+    // 4️⃣ Sort DESC
+    rankedInvestors.sort((a, b) => b.similarity - a.similarity);
+
+    // 5️⃣ Return top N (3)
+    return res.status(200).json({
+      startupId: startup._id,
+      matches: rankedInvestors.slice(0, 3)
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export default matchInvestors;
+
 const createStartupProfile = async (req, res) => {
     try {
         // userId should come from JWT, not req.body
@@ -134,42 +182,7 @@ const updateStartupProfile=async(req,res)=>{
 
 
 
-const matchInvestors = async (req, res) => {
-  try {
-    const userId = req.userId;
 
-
-    const startup = await Startup.findOne({ userId });
-    if (!startup) {
-      return res.status(404).json({ message: "Startup profile not found" });
-    }
-
-   
-    const investors = await Investor.find({});
-
-    let maximumScore = 0;
-    let topInvestor = null;
-
-    investors.forEach((investor) => {
-      const score = calculateScore(investor, startup);
-
-      if (score >= maximumScore) {
-        maximumScore = score;
-        topInvestor = investor;
-      }
-    });
-
-    return res.status(200).json({
-      startup,
-      topInvestor,
-      maximumScore
-    });
-
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
 
 
 const calculateScore = (investor, startup) => {
