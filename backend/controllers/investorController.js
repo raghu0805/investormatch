@@ -1,65 +1,144 @@
 import Investor from '../models/InvestorProfile.js';
+import StartupProfile from '../models/StartupProfile.js';
+import { cosineSimilarity } from '../utils/cosineSimilarity.js';
+import { generateEmbedding } from "../utils/generateEmbeddings.js";
+
+
+const matchStartup = async (req, res) => {
+  try {
+    const userId = req.userId;
+
+    // 1️⃣ Get investor with embedding
+    const investor = await Investor.findOne({
+      userId,
+      embeddingStatus: "completed"
+    });
+
+    if (!investor) {
+      return res.status(400).json({
+        message: "Startup embedding not ready"
+      });
+    }
+
+    // 2️⃣ Fetch eligible investors
+    const startup = await StartupProfile.find({
+      embeddingStatus: "completed",
+      // minimumInvestment: { $lte: startup.fundingNeeded },
+      // maximumInvestment: { $gte: startup.fundingNeeded }
+    });
+
+    // 3️⃣ Rank using cosine similarity
+    const rankedstartup = startup.map(stp => ({
+      ...stp.toObject(),
+      similarity: cosineSimilarity(stp.embedding, investor.embedding)
+    }));
+
+    // 4️⃣ Sort DESC
+    rankedstartup.sort((a, b) => b.similarity - a.similarity);
+    // 5️⃣ Return top N (3)
+    return res.status(200).json({
+      investorId: investor.userId,
+      matches: rankedstartup.slice(0, 3)
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+function buildInvestorEmbeddingText(investor) {
+  return `
+Investor Type: ${investor.investorType}
+Risk Level: ${investor.riskLevel}
+Preferred Industries: ${(investor.preferredIndustries || []).join(", ")}
+Investment Interest: ${investor.investmentInterest || ""}
+Description: ${investor.description || ""}
+Location: ${investor.location}
+`.trim();
+}
 
 
 const createInvestorProfile = async (req, res) => {
-    try {
-        const userId = req.userId;
+  try {
+    const userId = req.userId;
 
-        const {
-            investorName,
-            investorType,
-            location,
-            minimumInvestment,
-            maximumInvestment,
-            riskLevel,
-            preferredIndustries,
-            investmentInterest,
-            description,
-            websiteURL
-        } = req.body;
+    const {
+      investorName,
+      investorType,
+      location,
+      minimumInvestment,
+      maximumInvestment,
+      riskLevel,
+      preferredIndustries,
+      investmentInterest,
+      description,
+      websiteURL
+    } = req.body;
 
-
-        if (!investorName || !investorType || !location || !riskLevel) {
-            return res.status(400).json({
-                success: false,
-                message: "Required fields: investorName, investorType, location, riskLevel"
-            });
-        }
-
-        const existingInvestor = await Investor.findOne({ userId });
-        if (existingInvestor) {
-            return res.status(409).json({
-                success: false,
-                message: "Investor profile already exists"
-            });
-        }
-
-        const newInvestor = await Investor.create({
-            userId,
-            investorName,
-            investorType,
-            location,
-            minimumInvestment: Number(minimumInvestment),
-            maximumInvestment: Number(maximumInvestment),
-            riskLevel,
-            preferredIndustries,
-            investmentInterest,
-            description,
-            websiteURL
-        });
-
-        return res.status(201).json({
-            success: true,
-            message: "Investor profile created successfully",
-            data: newInvestor
-        });
-    } catch (err) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error"
-        });
+    // required fields validation
+    if (!investorName || !investorType || !location || !riskLevel) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields: investorName, investorType, location, riskLevel"
+      });
     }
+
+    // check existing profile
+    const existingInvestor = await Investor.findOne({ userId });
+    if (existingInvestor) {
+      return res.status(409).json({
+        success: false,
+        message: "Investor profile already exists"
+      });
+    }
+
+    // 1️⃣ Create investor profile FIRST
+    const newInvestor = await Investor.create({
+      userId,
+      investorName,
+      investorType,
+      location,
+      minimumInvestment: Number(minimumInvestment),
+      maximumInvestment: Number(maximumInvestment),
+      riskLevel,
+      preferredIndustries,
+      investmentInterest,
+      description,
+      websiteURL,
+      embeddingStatus: "pending"
+    });
+
+    // 2️⃣ Generate embedding safely (NON-BLOCKING)
+    try {
+      const text = buildInvestorEmbeddingText(newInvestor);
+      const embedding = await generateEmbedding(text);
+
+      newInvestor.embedding = embedding;
+      newInvestor.embeddingStatus = "completed";
+      await newInvestor.save();
+
+    } catch (embeddingError) {
+      console.error("Investor embedding failed:", embeddingError.message);
+      // profile remains valid even if embedding fails
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: "Investor profile created successfully",
+      data: newInvestor
+    });
+
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
+
 
 const getMyInvestorProfile = async (req, res) => {
     try {
@@ -155,5 +234,5 @@ const getInvestorProfileById = async (req, res) => {
   }
 };
 
-export {createInvestorProfile, getMyInvestorProfile, updateInvestorProfile,getInvestorProfileById
+export {createInvestorProfile, getMyInvestorProfile, updateInvestorProfile,getInvestorProfileById,matchStartup
 };

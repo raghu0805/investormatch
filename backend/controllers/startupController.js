@@ -1,6 +1,7 @@
 import Startup from '../models/StartupProfile.js';
 import Investor from '../models/InvestorProfile.js';
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
+import { generateEmbedding } from "../utils/generateEmbeddings.js";
 
 const matchInvestors = async (req, res) => {
   try {
@@ -47,75 +48,99 @@ const matchInvestors = async (req, res) => {
 };
 
 export default matchInvestors;
+function buildStartupEmbeddingText(startup) {
+  return `
+Industry: ${startup.industry}
+Stage: ${startup.stage}
+Problem: ${startup.problemStatement}
+Solution: ${startup.solution}
+Description: ${startup.description || ""}
+Location: ${startup.location}
+`.trim();
+}
 
 const createStartupProfile = async (req, res) => {
-    try {
-        // userId should come from JWT, not req.body
-        const userId = req.userId;
+  try {
+    const userId = req.userId;
 
-        const { 
-            startupName, 
-            founderName, 
-            industry, 
-            problemStatement, 
-            solution, 
-            description, 
-            pitchDeckURL, 
-            teamSize, 
-            stage, 
-            fundingNeeded, 
-            location 
-        } = req.body;
+    const { 
+      startupName, 
+      founderName, 
+      industry, 
+      problemStatement, 
+      solution, 
+      description, 
+      pitchDeckURL, 
+      teamSize, 
+      stage, 
+      fundingNeeded, 
+      location 
+    } = req.body;
 
-        // required fields validation
-        if (!startupName || !founderName || !industry || !problemStatement || !solution || !stage || !fundingNeeded || !location) {
-            return res.status(400).json({ error: "All required fields must be provided." });
-        }
-
-        // stage validation
-        const allowedStages = ["idea", "prototype", "MVP", "Scale"];
-        if (!allowedStages.includes(stage)) {
-            return res.status(400).json({ error: "Startup stage is not allowed/invalid!" });
-        }
-
-        // check if profile already exists
-        const existingProfile = await Startup.findOne({ userId });
-        if (existingProfile) {
-            return res.status(400).json({ error: "Startup profile already exists" });
-        }
-
-        // create profile
-        const newStartupProfile = await Startup.create({
-            userId,
-            startupName,
-            founderName,
-            industry,
-            problemStatement,
-            solution,
-            description,
-            pitchDeckURL,
-            teamSize,
-            stage,
-            fundingNeeded,
-            location
-        });
-
-        return res.status(201).json({
-            message: "Startup profile created successfully",
-            profile: newStartupProfile
-        });
-
-    } catch (err) {
-        console.error(err);
-
-        // handle duplicate key error
-        if (err.code === 11000) {
-            return res.status(400).json({ error: "Profile already exists" });
-        }
-
-        return res.status(500).json({ error: "Server Error" });
+    // required fields validation
+    if (!startupName || !founderName || !industry || !problemStatement || !solution || !stage || !fundingNeeded || !location) {
+      return res.status(400).json({ error: "All required fields must be provided." });
     }
+
+    // stage validation
+    const allowedStages = ["idea", "prototype", "MVP", "Scale"];
+    if (!allowedStages.includes(stage)) {
+      return res.status(400).json({ error: "Startup stage is not allowed/invalid!" });
+    }
+
+    // check if profile already exists
+    const existingProfile = await Startup.findOne({ userId });
+    if (existingProfile) {
+      return res.status(400).json({ error: "Startup profile already exists" });
+    }
+
+    // 1️⃣ Create profile FIRST
+    const newStartupProfile = await Startup.create({
+      userId,
+      startupName,
+      founderName,
+      industry,
+      problemStatement,
+      solution,
+      description,
+      pitchDeckURL,
+      teamSize,
+      stage,
+      fundingNeeded,
+      location,
+      embeddingStatus: "pending"
+    });
+
+    // 2️⃣ Generate embedding (NON-BLOCKING LOGIC)
+    try {
+      const text = buildStartupEmbeddingText(newStartupProfile);
+      const embedding = await generateEmbedding(text);
+
+      newStartupProfile.embedding = embedding;
+      newStartupProfile.embeddingStatus = "completed";
+      await newStartupProfile.save();
+
+    } catch (embeddingError) {
+      console.error("Embedding generation failed:", embeddingError);
+      // profile still exists – safe fallback
+    }
+
+    return res.status(201).json({
+      message: "Startup profile created successfully",
+      profile: newStartupProfile
+    });
+
+  } catch (err) {
+    console.error(err);
+
+    if (err.code === 11000) {
+      return res.status(400).json({ error: "Profile already exists" });
+    }
+
+    return res.status(500).json({ error: "Server Error" });
+  }
 };
+
 
 
 

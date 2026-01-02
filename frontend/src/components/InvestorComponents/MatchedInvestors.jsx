@@ -13,11 +13,12 @@ export default function MatchedInvestors() {
   const handleSendRequest = async (investorId) => {
     try {
       // alert(investorId);
-      await api.post("/request/send", { investorId });
+      await api.post("/request/send-startup-request", { investorId });
       setRequestStatus(!requestStatus);
       toast.success("Request sent successfully");
     } catch (err) {
-      toast.error("message:",err.response?.data?.message || "Failed to send request");
+      toast.error("message:",err.response?.data?.message || "Failed to send request")
+      console.log("message:",err.response?.data?.message);
     }
   };
 
@@ -29,11 +30,11 @@ export default function MatchedInvestors() {
     setMatches(res.data.matches || []);
 
 
-    if (res.data.topInvestor) {
-      const investorId = res.data.topInvestor._id;
+    if (res.data.matches) {
+      const investorId = res.data.matches._id;
 
       const investor_data = await api.get(
-        `/request/check_request?investorId=${investorId}`
+        `/request/check_request/from-startup?investorId=${investorId}`
       );
       console.log(investor_data)
 

@@ -4,7 +4,7 @@ import Startup from "../models/StartupProfile.js"
 import { generateRoomId } from "../utils/createRoom.js";
 
 
-const sendRequest = async (req, res) => {
+const sendStartupRequest = async (req, res) => {
   try {
     // Convert logged-in user → StartupProfile ID
     const startup = await Startup.findOne({ userId: req.userId });
@@ -45,9 +45,45 @@ const sendRequest = async (req, res) => {
 };
 
 
-export default sendRequest;
 
 
+
+const sendInvestorRequest = async (req, res) => {
+  try {
+    // Convert logged-in user → InvestorProfile ID
+    const investor = await Investor.findOne({ userId: req.userId });
+
+    if (!investor) {
+      return res.status(404).json({ message: "Startup profile not found" });
+    }
+
+    const investorId = investor._id;   // ✔ correct
+
+    const { startupId } = req.body;
+
+    if (!investorId || !startupId) {
+      return res.status(400).json({ message: "Missing data" });
+    }
+
+    const requestExist = await Request.findOne({ investorId, startupId });
+
+    if (requestExist) {
+      return res.status(400).json({ message: "Request already exists" });
+    }
+
+    const roomId = generateRoomId(startupId, investorId);
+    // Create request with correct startupId
+    const created = await Request.create({
+      investorId,
+      startupId,
+      roomId,
+    });
+    return res.status(201).json({ message: "Request created", data: created });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 const getSentRequests = async (req, res) => {
   try {
     // 1️⃣ Find the startup profile using logged-in userId
@@ -134,5 +170,21 @@ const investorId = req.query.investorId;
        return res.status(500).json({ message: "Server error" });
   }
 }
-export { sendRequest,getSentRequests,getReceivedRequests,updateRequestStatus,checkingAlreadySent };
+
+//it is for sending request from investor to stattup
+const checkingInvestorAlreadySent=async(req,res)=>{
+  try{
+    const investorId=req.userId;
+const startupId = req.query.startupId;   
+    const requestExist = await Request.findOne({ investorId, startupId });
+    if(requestExist){
+      return res.status(400).json({message:"The request is already sent"})
+    }
+    return res.status(200).json({message:"The request is not sent"});
+  }
+  catch(err){
+       return res.status(500).json({ message: "Server error" });
+  }
+}
+export { sendStartupRequest,sendInvestorRequest,getSentRequests,getReceivedRequests,updateRequestStatus,checkingAlreadySent,checkingInvestorAlreadySent };
 

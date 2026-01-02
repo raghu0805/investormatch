@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
 import Navbar from "../Navbar";
+import MatchedStartup from "../StartupComponents/MatchedStartup";
 
 export default function InvestorDashboard() {
   const navigate = useNavigate();
@@ -102,12 +103,28 @@ export default function InvestorDashboard() {
               >
                 Edit Profile
               </button>
+              
 
             </div>
+            
           )}
+           <div className="bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-gray-700 mt-8">
+              <h2 className="text-2xl font-semibold mb-4">Find Matching Startups</h2>
+              <p className="mb-4">
+                View startup matched using industry, funding, location, and stage.
+              </p>
+              <button
+                onClick={() => navigate("/investor/matched-startups")}
+                className="px-5 py-3 bg-green-600 hover:bg-green-700 text-lg rounded-xl font-semibold"
+              >
+                View Matches
+              </button>
+            </div>
 
         </div>
+        
       </div>
+         
     </>
 
   );

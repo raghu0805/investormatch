@@ -19,6 +19,7 @@ import NotFound from "./components/NotFound";
 
 
 import Layout from "./components/InvestorComponents/Layout";
+import MatchedStartup from "./components/StartupComponents/MatchedStartup";
 
 function App() {
   return (
@@ -40,7 +41,10 @@ function App() {
         <Route path="/investor/create-profile" element={<ProtectedRoutes><CreateInvestorProfile /></ProtectedRoutes>} />
         <Route path="/investor/edit-profile" element={<ProtectedRoutes><EditInvestorProfile /></ProtectedRoutes>} />
         <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests /></ProtectedRoutes>} />
+        
         <Route path="/investor/profile/:id" element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} />
+        <Route path="/investor/matched-startups" element={<ProtectedRoutes><MatchedStartup /></ProtectedRoutes>} />
+        
       </Route>
 
       {/* <Route
