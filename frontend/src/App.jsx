@@ -20,14 +20,15 @@ import NotFound from "./components/NotFound";
 
 import Layout from "./components/InvestorComponents/Layout";
 import MatchedStartup from "./components/StartupComponents/MatchedStartup";
-
+import StartupFullProfile from "./components/StartupComponents/StartupFullProfile";
+import ChatPage from "./components/ChatPage"
 function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Register />} />
-
+     
 
       <Route element={<Layout />}>
         {/* Startup Pages */}
@@ -43,53 +44,12 @@ function App() {
         <Route path="/investor/request" element={<ProtectedRoutes><InvestorRequests /></ProtectedRoutes>} />
         
         <Route path="/investor/profile/:id" element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} />
+        <Route path="/startup/profile/:id" element={<ProtectedRoutes><StartupFullProfile /></ProtectedRoutes>} />
         <Route path="/investor/matched-startups" element={<ProtectedRoutes><MatchedStartup /></ProtectedRoutes>} />
         
       </Route>
 
-      {/* <Route
-        path="/startup/dashboard"
-        element={<ProtectedRoutes><StartupDashboard /></ProtectedRoutes>}
-      />
-      <Route
-        path="/startup/create"
-        element={<ProtectedRoutes><CreateStartupProfile /></ProtectedRoutes>}
-      />
-      <Route
-        path="/startup/edit"
-        element={<ProtectedRoutes><EditStartupProfile /></ProtectedRoutes>}
-      />
-      <Route
-        path="/startup/request"
-        element={<ProtectedRoutes><StartupRequests /></ProtectedRoutes>}
-      />
-      <Route
-        path="/startup/matched-investors"
-        element={<ProtectedRoutes><MatchedInvestors /></ProtectedRoutes>}
-      />
-
-      <Route
-        path="/investor/dashboard"
-        element={<ProtectedRoutes><InvestorDashboard /></ProtectedRoutes>}
-      />
-      <Route
-        path="/investor/create-profile"
-        element={<ProtectedRoutes><CreateInvestorProfile /></ProtectedRoutes>}
-      />
-      <Route
-        path="/investor/edit-profile"
-        element={<ProtectedRoutes><EditInvestorProfile /></ProtectedRoutes>}
-      />
-      <Route
-        path="/investor/request"
-        element={<ProtectedRoutes><InvestorRequests /></ProtectedRoutes>}
-      />
-      <Route
-        path="/investor/profile/:id"
-        element={<ProtectedRoutes><InvestorFullProfile /></ProtectedRoutes>} 
-      />*/}
-
-      {/* ✅ ONLY chat page */}
+       <Route path="/chats" element={<ChatPage />}/>
 
 
       <Route path="*" element={<NotFound />} />

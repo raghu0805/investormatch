@@ -1,12 +1,9 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+ 
+const MessageSchema=new mongoose.Schema({
+      roomId: { type: String, required: true }, // Links message to a specific chat
+    senderId: { type: String, required: true }, // Who sent it?
+    text: { type: String, required: true }      // The content
+})
 
-const messageSchema = new mongoose.Schema(
-  {
-    roomId: { type: String, required: true },
-    senderId: { type: String, required: true },
-    text: { type: String, required: true }
-  },
-  { timestamps: true }
-);
-
-export default mongoose.model("Message", messageSchema);
+export default mongoose.model("Message",MessageSchema);

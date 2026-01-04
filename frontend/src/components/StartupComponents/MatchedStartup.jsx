@@ -91,7 +91,7 @@ export default function MatchedStartup() {
                                     {startup.industry}
                                 </p>
                                 <button
-                                    onClick={() => navigate(`/investor/profile/${startup.userId}`, { state: { from: "matched" } })}
+                                    onClick={() => navigate(`/startup/profile/${startup.userId}`, { state: { from: "matched" } })}
                                     className="mt-8 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold"
                                 >
                                     View Full Profile

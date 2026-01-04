@@ -241,5 +241,21 @@ const calculateScore = (investor, startup) => {
 
   return score;
 };
+const getStartupProfileById = async (req, res) => {
+  try {
+    const { userId } = req.params;
 
-export {createStartupProfile,getMyStartupProfile,updateStartupProfile,matchInvestors};
+    const profile = await Startup.findOne({ userId });
+
+    if (!profile) {
+      return res.status(404).json({ message: "Investor profile not found" });
+    }
+
+    return res.status(200).json({ success: true, profile });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export {createStartupProfile,getMyStartupProfile,updateStartupProfile,matchInvestors,getStartupProfileById};

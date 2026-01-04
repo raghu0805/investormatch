@@ -1,66 +1,26 @@
-// // socketHandler.js
-// import { saveMessageFromSocket } from "../controllers/messageController.js";
+import {saveMessageFromSocket} from "../controllers/messageController.js"
+export default function SocketHandler(io){
+    io.on("connection",(socket)=>{
+        console.log("a user connected");
 
-// export default function socketHandler(io) {
-//   io.on("connection", (socket) => {
-//     console.log("🟢 Client connected:", socket.id);
 
-//     /* ---------------------------------------------------
-//        JOIN ROOM
-//     --------------------------------------------------- */
-//     socket.on("join-room", (roomId) => {
-//       if (!roomId) return;
-//       console.log("🏠 User joined room:", roomId);
-//       socket.join(roomId);
-//     });
+        //1.Join Room-roomId will be the combination of starup and investor
 
-//     /* ---------------------------------------------------
-//        LEAVE ROOM (IMPORTANT)
-//     --------------------------------------------------- */
-//     socket.on("leave-room", (roomId) => {
-//       if (!roomId) return;
-//       console.log("🚪 User left room:", roomId);
-//       socket.leave(roomId);
-//     });
+        socket.on("join-room",(roomId)=>{
+            if(roomId){
+                socket.join(roomId);
+            }
+        })
 
-//     /* ---------------------------------------------------
-//        SEND MESSAGE
-//     --------------------------------------------------- */ 
-//     socket.on("send-message", async (data) => {
-//       try {
-//         console.log("📥 Incoming message:", data);
-
-//         const savedMessage = await saveMessageFromSocket(data);
-
-//         if (!savedMessage) {
-//           console.log("❌ Message not saved");
-//           return;
-//         }
-
-//         // Emit to everyone in room (including sender)
-//         io.to(data.roomId).emit("new-message", savedMessage);
-//       } catch (err) {
-//         console.error("❌ Socket send-message error:", err);
-//       }
-//     });
-
-//     /* ---------------------------------------------------
-//        TYPING INDICATOR
-//     --------------------------------------------------- */
-//     socket.on("typing", ({ roomId, senderId }) => {
-//       socket.to(roomId).emit("typing", { roomId, senderId });
-//     });
-
-//     socket.on("stop-typing", ({ roomId, senderId }) => {
-//       socket.to(roomId).emit("stop-typing", { roomId, senderId });
-//     });
-
-//     /* ---------------------------------------------------
-//        DISCONNECT
-//     --------------------------------------------------- */
-//     socket.on("disconnect", () => {
-//       console.log("🔴 Client disconnected:", socket.id);
-//     });
-//   });
-// }
- 
+        //2.Send Message
+        socket.on("send-message",async(data)=>{
+            const message=await saveMessageFromSocket(data);
+            if(message){
+                io.to(data.roomId).emit("message-received",message);
+            }
+        });
+        socket.on("disconnect",()=>{
+            console.log("user disconnected");
+        })
+    })
+}
