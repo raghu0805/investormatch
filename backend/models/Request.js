@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const requestSchema = new mongoose.Schema(
   {
     startupId: {
@@ -19,22 +18,27 @@ const requestSchema = new mongoose.Schema(
       default: "pending",
     },
 
+    senderRole: {
+      type: String,
+      enum: ["startup", "investor"],
+      required: true
+    },
+
     roomId: {
       type: String,
       default: null,
     },
     blocked: {
-  type: Boolean,
-  default: false
-},
-blockedBy: {
-  type: mongoose.Schema.Types.ObjectId,  // user who blocked
-  ref: "User",
-  default: null
-} ,
+      type: Boolean,
+      default: false
+    },
+    blockedBy: {
+      type: mongoose.Schema.Types.ObjectId,  // user who blocked
+      ref: "User",
+      default: null
+    },
   },
   { timestamps: true }
 );
-
 const Request = mongoose.model("Request", requestSchema);
 export default Request;

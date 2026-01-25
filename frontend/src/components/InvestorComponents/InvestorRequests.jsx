@@ -13,8 +13,8 @@ export default function InvestorRequests() {
   //SOCKET LOGIC
   useEffect(() => {
     // 1. Connect
-    // const socket = io("http://localhost:5000"); // Use your backend URL
-    const socket = io("https://investormatch-backend-yn2k.onrender.com");
+    const socket = io("http://localhost:5000"); // Use your backend URL
+    // const socket = io("https://investormatch-backend-yn2k.onrender.com");
 
     // Use your backend URL
     // 2. Get User ID from token
@@ -35,10 +35,19 @@ export default function InvestorRequests() {
     };
   }, []);
 
+  const [activeTab, setActiveTab] = useState("received");
+
   const fetchRequests = async () => {
     try {
-      const res = await api.get("/request/received");
-      console.log("request from the investorRequests:", res);
+      setLoading(true);
+      let res;
+      if (activeTab === "received") {
+        res = await api.get("/request/received");
+      } else {
+        res = await api.get("/request/investor/sent");
+      }
+
+      console.log(`Requests (${activeTab}):`, res);
       const data = res.data.data;
       if (Array.isArray(data)) {
         setRequests(data);
@@ -47,13 +56,14 @@ export default function InvestorRequests() {
       }
     } catch (err) {
       console.log("Error fetching requests:", err);
+      setRequests([]);
     }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchRequests();
-  }, []);
+  }, [activeTab]);
 
   const updateStatus = async (requestId, status) => {
     try {
@@ -76,10 +86,30 @@ export default function InvestorRequests() {
     <>
 
       <div className="min-h-screen bg-gray-900 text-white p-6">
-        <h1 className="text-3xl font-bold mb-6 text-center">Received Requests</h1>
+        <h1 className="text-3xl font-bold mb-6 text-center">Requests</h1>
+
+        {/* TABS */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-gray-800 p-1 rounded-xl flex gap-2">
+            <button
+              onClick={() => setActiveTab("received")}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === "received" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
+                }`}
+            >
+              Received (Startups)
+            </button>
+            <button
+              onClick={() => setActiveTab("sent")}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all ${activeTab === "sent" ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white"
+                }`}
+            >
+              Sent (By Me)
+            </button>
+          </div>
+        </div>
 
         {requests.length === 0 && (
-          <p className="text-center text-gray-400">No received requests yet.</p>
+          <p className="text-center text-gray-400">No {activeTab} requests found.</p>
         )}
 
         <div className="max-w-3xl mx-auto space-y-4">
@@ -97,24 +127,29 @@ export default function InvestorRequests() {
               </p>
 
               <p className="mt-1 text-sm text-gray-400">
-                Requested On: {new Date(req.createdAt).toLocaleString()}
+                {activeTab === "received" ? "Requested On:" : "Sent On:"} {new Date(req.createdAt).toLocaleString()}
               </p>
 
               <div className="mt-4 flex gap-4">
 
-                <button
-                  onClick={() => updateStatus(req._id, "accepted")}
-                  className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold"
-                >
-                  Accept
-                </button>
+                {/* ONLY SHOW ACCEPT/REJECT IF RECEIVED */}
+                {activeTab === "received" && (
+                  <>
+                    <button
+                      onClick={() => updateStatus(req._id, "accepted")}
+                      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg font-semibold"
+                    >
+                      Accept
+                    </button>
 
-                <button
-                  onClick={() => updateStatus(req._id, "rejected")}
-                  className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold"
-                >
-                  Reject
-                </button>
+                    <button
+                      onClick={() => updateStatus(req._id, "rejected")}
+                      className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold"
+                    >
+                      Reject
+                    </button>
+                  </>
+                )}
 
                 <button
                   onClick={() => navigate("/chats", {
@@ -122,7 +157,6 @@ export default function InvestorRequests() {
                       selectedChat: {
                         requestId: req._id,
                         name: req.startupId?.startupName || "Unknown Startup",
-                        // You might need other fields here depending on what ChatPage expects in `chat` object
                       }
                     }
                   })}

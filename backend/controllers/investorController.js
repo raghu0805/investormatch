@@ -1,5 +1,6 @@
 import Investor from '../models/InvestorProfile.js';
 import StartupProfile from '../models/StartupProfile.js';
+import Request from '../models/Request.js';
 import { cosineSimilarity } from '../utils/cosineSimilarity.js';
 import { generateEmbedding } from "../utils/generateEmbeddings.js";
 
@@ -27,15 +28,29 @@ const matchStartup = async (req, res) => {
       // maximumInvestment: { $gte: startup.fundingNeeded }
     });
 
-    // 3️⃣ Rank using cosine similarity
-    const rankedstartup = startup.map(stp => ({
-      ...stp.toObject(),
-      similarity: cosineSimilarity(stp.embedding, investor.embedding)
-    }));
+    // 3️⃣ FETCH ALL REQUESTS involving this investor (Sent OR Received)
+    const allRequests = await Request.find({ investorId: investor._id });
 
-    // 4️⃣ Sort DESC
+    // Create a Map: startupId -> { status, requestId }
+    const requestStatusMap = new Map();
+    allRequests.forEach(req => {
+      requestStatusMap.set(req.startupId.toString(), { status: req.status, requestId: req._id });
+    });
+
+    // 4️⃣ Rank using cosine similarity AND add request status
+    const rankedstartup = startup.map(stp => {
+      const requestInfo = requestStatusMap.get(stp._id.toString());
+      return {
+        ...stp.toObject(),
+        similarity: cosineSimilarity(stp.embedding, investor.embedding),
+        requestStatus: requestInfo ? requestInfo.status : null,
+        requestId: requestInfo ? requestInfo.requestId : null
+      }
+    });
+
+    // 5️⃣ Sort DESC
     rankedstartup.sort((a, b) => b.similarity - a.similarity);
-    // 5️⃣ Return top N (3)
+    // 6️⃣ Return top N (3)
     return res.status(200).json({
       investorId: investor.userId,
       matches: rankedstartup.slice(0, 3)
@@ -141,81 +156,81 @@ const createInvestorProfile = async (req, res) => {
 
 
 const getMyInvestorProfile = async (req, res) => {
-    try {
-        const userId = req.userId;
+  try {
+    const userId = req.userId;
 
-        const investorProfile = await Investor.findOne({ userId });
-        if (!investorProfile) {
-            return res.status(404).json({
-                success: false,
-                message: "Investor profile not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Investor profile fetched successfully",
-            data: investorProfile
-        });
-
-    } catch (err) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error"
-        });
+    const investorProfile = await Investor.findOne({ userId });
+    if (!investorProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Investor profile not found"
+      });
     }
+
+    return res.status(200).json({
+      success: true,
+      message: "Investor profile fetched successfully",
+      data: investorProfile
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
 
 const updateInvestorProfile = async (req, res) => {
-    try {
-        const userId = req.userId;
+  try {
+    const userId = req.userId;
 
-        const investorProfile = await Investor.findOne({ userId });
-        if (!investorProfile) {
-            return res.status(404).json({
-                success: false,
-                message: "Investor profile not found"
-            });
-        }
-
-        const allowedFields = [
-            "investorName",
-            "investorType",
-            "location",
-            "minimumInvestment",
-            "maximumInvestment",
-            "riskLevel",
-            "preferredIndustries",
-            "investmentInterest",
-            "description",
-            "websiteURL"
-        ];
-
-        allowedFields.forEach((field) => {
-            if (req.body[field] !== undefined) {
-                // Convert number fields
-                if (field === "minimumInvestment" || field === "maximumInvestment") {
-                    investorProfile[field] = Number(req.body[field]);
-                } else {
-                    investorProfile[field] = req.body[field];
-                }
-            }
-        });
-
-        await investorProfile.save();
-
-        return res.status(200).json({
-            success: true,
-            message: "Investor profile updated successfully",
-            data: investorProfile
-        });
-
-    } catch (err) {
-        return res.status(500).json({
-            success: false,
-            message: "Server error"
-        });
+    const investorProfile = await Investor.findOne({ userId });
+    if (!investorProfile) {
+      return res.status(404).json({
+        success: false,
+        message: "Investor profile not found"
+      });
     }
+
+    const allowedFields = [
+      "investorName",
+      "investorType",
+      "location",
+      "minimumInvestment",
+      "maximumInvestment",
+      "riskLevel",
+      "preferredIndustries",
+      "investmentInterest",
+      "description",
+      "websiteURL"
+    ];
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        // Convert number fields
+        if (field === "minimumInvestment" || field === "maximumInvestment") {
+          investorProfile[field] = Number(req.body[field]);
+        } else {
+          investorProfile[field] = req.body[field];
+        }
+      }
+    });
+
+    await investorProfile.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Investor profile updated successfully",
+      data: investorProfile
+    });
+
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
 };
 const getInvestorProfileById = async (req, res) => {
   try {
@@ -234,5 +249,6 @@ const getInvestorProfileById = async (req, res) => {
   }
 };
 
-export {createInvestorProfile, getMyInvestorProfile, updateInvestorProfile,getInvestorProfileById,matchStartup
+export {
+  createInvestorProfile, getMyInvestorProfile, updateInvestorProfile, getInvestorProfileById, matchStartup
 };

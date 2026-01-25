@@ -27,10 +27,24 @@ const matchInvestors = async (req, res) => {
     });
 
     // 3️⃣ Rank using cosine similarity
-    const rankedInvestors = investors.map(inv => ({
-      ...inv.toObject(),
-      similarity: cosineSimilarity(startup.embedding, inv.embedding)
-    }));
+    // 3️⃣ Rank using cosine similarity
+
+    // FETCH ALL REQUESTS involving this startup
+    const allRequests = await Request.find({ startupId: startup._id });
+    const requestStatusMap = new Map();
+    allRequests.forEach(req => {
+      requestStatusMap.set(req.investorId.toString(), { status: req.status, requestId: req._id });
+    });
+
+    const rankedInvestors = investors.map(inv => {
+      const requestInfo = requestStatusMap.get(inv._id.toString());
+      return {
+        ...inv.toObject(),
+        similarity: cosineSimilarity(startup.embedding, inv.embedding),
+        requestStatus: requestInfo ? requestInfo.status : null,
+        requestId: requestInfo ? requestInfo.requestId : null
+      }
+    });
 
     // 4️⃣ Sort DESC
     rankedInvestors.sort((a, b) => b.similarity - a.similarity);
@@ -63,18 +77,18 @@ const createStartupProfile = async (req, res) => {
   try {
     const userId = req.userId;
 
-    const { 
-      startupName, 
-      founderName, 
-      industry, 
-      problemStatement, 
-      solution, 
-      description, 
-      pitchDeckURL, 
-      teamSize, 
-      stage, 
-      fundingNeeded, 
-      location 
+    const {
+      startupName,
+      founderName,
+      industry,
+      problemStatement,
+      solution,
+      description,
+      pitchDeckURL,
+      teamSize,
+      stage,
+      fundingNeeded,
+      location
     } = req.body;
 
     // required fields validation
@@ -170,16 +184,16 @@ const getMyStartupProfile = async (req, res) => {
   }
 };
 
-const updateStartupProfile=async(req,res)=>{
-  try{
+const updateStartupProfile = async (req, res) => {
+  try {
 
-  
-  const userId=req.userId;
-  const profile=await Startup.findOne({userId});
-  if(!profile){
-    return res.status(404).json({error:"The profile not found"});
-  }    
-  const allowed = [
+
+    const userId = req.userId;
+    const profile = await Startup.findOne({ userId });
+    if (!profile) {
+      return res.status(404).json({ error: "The profile not found" });
+    }
+    const allowed = [
       "startupName",
       "founderName",
       "industry",
@@ -192,17 +206,17 @@ const updateStartupProfile=async(req,res)=>{
       "pitchDeckURL",
       "teamSize"
     ];
-  allowed.forEach((field)=>{
-    if(req.body[field]!==undefined){
-      profile[field]=req.body[field];
-    }
-  })
-  await profile.save();
+    allowed.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        profile[field] = req.body[field];
+      }
+    })
+    await profile.save();
 
-  return res.status(201).json({message:"profile updated successfully",profile});
-}catch(err){
-  return res.status(500).json({error:"Server error"});
-}
+    return res.status(201).json({ message: "profile updated successfully", profile });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error" });
+  }
 }
 
 
@@ -213,17 +227,17 @@ const updateStartupProfile=async(req,res)=>{
 const calculateScore = (investor, startup) => {
   let score = 0;
 
- 
+
   if (investor.location.toLowerCase() === startup.location.toLowerCase()) {
     score += 20;
   }
 
- 
+
   if (investor.preferredIndustries.includes(startup.industry)) {
     score += 40;
   }
 
-  
+
   if (
     investor.minimumInvestment <= startup.fundingNeeded &&
     investor.maximumInvestment >= startup.fundingNeeded
@@ -231,7 +245,7 @@ const calculateScore = (investor, startup) => {
     score += 30;
   }
 
-    
+
   if (
     investor.investmentInterest &&
     investor.investmentInterest.toLowerCase().includes(startup.stage.toLowerCase())
@@ -258,4 +272,4 @@ const getStartupProfileById = async (req, res) => {
   }
 };
 
-export {createStartupProfile,getMyStartupProfile,updateStartupProfile,matchInvestors,getStartupProfileById};
+export { createStartupProfile, getMyStartupProfile, updateStartupProfile, matchInvestors, getStartupProfileById };

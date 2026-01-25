@@ -8,13 +8,21 @@ export default function MatchedStartup() {
     const navigate = useNavigate();
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [requestStatus, setRequestStatus] = useState(false);
+    // const [requestStatus, setRequestStatus] = useState(false); // Removed global status
 
     const handleSendRequest = async (startupId) => {
         try {
-            // alert(investorId);
             await api.post("/request/send-investor-request", { startupId });
-            setRequestStatus(!requestStatus);
+
+            // Optimistically update the UI for THAT specific startup
+            setMatches(prevMatches =>
+                prevMatches.map(startup =>
+                    startup._id === startupId
+                        ? { ...startup, requestStatus: 'pending' }
+                        : startup
+                )
+            );
+
             toast.success("Request sent successfully");
         } catch (err) {
             toast.error("message:", err.response?.data?.message || "Failed to send request");
@@ -25,24 +33,10 @@ export default function MatchedStartup() {
     const fetchMatches = async () => {
         try {
             const res = await api.get("/investor/match-startups");
-
-            // setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
+            // Backend now returns matches with `requestSent` property
             setMatches(Array.isArray(res.data.matches) ? res.data.matches : []);
 
-
-            if (res.data.matches) {
-                const startupId = res.data.matches._id;
-
-                const startup_data = await api.get(
-                    `/request/check_request/from-investor?startupId=${startupId}`
-                );
-                console.log(startup_data);
-
-                setRequestStatus(startup_data.data.exists === true);
-            }
-
         } catch (err) {
-            setRequestStatus(!requestStatus);
             console.log("Error fetching matches", err);
         }
         setLoading(false);
@@ -98,18 +92,37 @@ export default function MatchedStartup() {
                                 </button>
 
 
-                                {/* Send Request */}
-                                <button
-                                    disabled={requestStatus === true}
-                                    onClick={() => handleSendRequest(startup._id)}
-                                    className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
-    ${requestStatus === true
-                                            ? "bg-gray-500 cursor-not-allowed"
-                                            : "bg-green-600 hover:bg-green-700"}
-  `}
-                                >
-                                    {requestStatus === true ? "Request Already Sent" : "Send Request"}
-                                </button>
+                                {/* Action Button Logic */}
+                                {startup.requestStatus === "accepted" ? (
+                                    <button
+                                        onClick={() =>
+                                            navigate(`/chats`, {
+                                                state: {
+                                                    selectedChat: {
+                                                        requestId: startup.requestId,
+                                                        name: startup.startupName,
+                                                    },
+                                                },
+                                            })
+                                        }
+                                        className="mt-4 w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-white font-semibold"
+                                    >
+                                        Message
+                                    </button>
+                                ) : (
+                                    <button
+                                        disabled={!!startup.requestStatus}
+                                        onClick={() => handleSendRequest(startup._id)}
+                                        className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
+                                            ${startup.requestStatus
+                                                ? "bg-gray-500 cursor-not-allowed"
+                                                : "bg-green-600 hover:bg-green-700"}
+                                        `}
+                                    >
+                                        {startup.requestStatus === "pending" ? "Request Sent" :
+                                            startup.requestStatus === "rejected" ? "Rejected" : "Send Request"}
+                                    </button>
+                                )}
                             </div>
                         ))}
                     </div>

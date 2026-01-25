@@ -12,9 +12,17 @@ export default function MatchedInvestors() {
 
   const handleSendRequest = async (investorId) => {
     try {
-      // alert(investorId);
       await api.post("/request/send-startup-request", { investorId });
-      setRequestStatus(!requestStatus);
+
+      // Optimistically update the UI
+      setMatches(prevMatches =>
+        prevMatches.map(investor =>
+          investor._id === investorId
+            ? { ...investor, requestStatus: 'pending' }
+            : investor
+        )
+      );
+
       toast.success("Request sent successfully");
     } catch (err) {
       toast.error("message:", err.response?.data?.message || "Failed to send request")
@@ -25,24 +33,8 @@ export default function MatchedInvestors() {
   const fetchMatches = async () => {
     try {
       const res = await api.get("/startup/match-investors");
-
-      // setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
       setMatches(Array.isArray(res.data.matches) ? res.data.matches : []);
-
-
-      if (res.data.matches) {
-        const investorId = res.data.matches._id;
-
-        const investor_data = await api.get(
-          `/request/check_request/from-startup?investorId=${investorId}`
-        );
-        console.log(investor_data)
-
-        setRequestStatus(investor_data.data.exists === true);
-      }
-
     } catch (err) {
-      setRequestStatus(!requestStatus);
       console.log("Error fetching matches", err);
     }
     setLoading(false);
@@ -103,9 +95,6 @@ export default function MatchedInvestors() {
                   </p>
                 )}
 
-                {/* Correct View Profile Button */}
-
-
                 <button
                   onClick={() => navigate(`/investor/profile/${investor.userId}`, { state: { from: "matched" } })}
                   className="mt-8 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold"
@@ -114,19 +103,37 @@ export default function MatchedInvestors() {
                 </button>
 
 
-                {/* Send Request */}
-                <button
-                  disabled={requestStatus === true}
-                  onClick={() => handleSendRequest(investor._id)}
-                  className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
-    ${requestStatus === true
-                      ? "bg-gray-500 cursor-not-allowed"
-                      : "bg-green-600 hover:bg-green-700"}
-  `}
-                >
-                  {requestStatus === true ? "Request Already Sent" : "Send Request"}
-                </button>
-
+                {/* Action Button Logic */}
+                {investor.requestStatus === "accepted" ? (
+                  <button
+                    onClick={() =>
+                      navigate(`/chats`, {
+                        state: {
+                          selectedChat: {
+                            requestId: investor.requestId,
+                            name: investor.investorName,
+                          },
+                        },
+                      })
+                    }
+                    className="mt-4 w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-white font-semibold"
+                  >
+                    Message
+                  </button>
+                ) : (
+                  <button
+                    disabled={!!investor.requestStatus} // Disabled if ANY status exists (pending, rejected)
+                    onClick={() => handleSendRequest(investor._id)}
+                    className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
+                      ${investor.requestStatus
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-green-600 hover:bg-green-700"}
+                    `}
+                  >
+                    {investor.requestStatus === "pending" ? "Request Sent" :
+                      investor.requestStatus === "rejected" ? "Rejected" : "Send Request"}
+                  </button>
+                )}
 
               </div>
             ))}

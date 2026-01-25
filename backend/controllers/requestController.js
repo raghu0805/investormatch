@@ -34,6 +34,7 @@ const sendStartupRequest = async (req, res) => {
       investorId,
       startupId,
       roomId,
+      senderRole: "startup"
     });
 
     return res.status(201).json({ message: "Request created", data: created });
@@ -77,6 +78,7 @@ const sendInvestorRequest = async (req, res) => {
       investorId,
       startupId,
       roomId,
+      senderRole: "investor"
     });
     return res.status(201).json({ message: "Request created", data: created });
   } catch (err) {
@@ -97,7 +99,7 @@ const getSentRequests = async (req, res) => {
     // console.log("startup id from getSentRequest:", startupId.toString());
 
     // 2️⃣ Use StartupProfile._id in the query
-    const sent = await Request.find({ startupId }).populate("investorId");
+    const sent = await Request.find({ startupId, senderRole: "startup" }).populate("investorId");
 
     // console.log("sent requests:", sent);
 
@@ -121,7 +123,7 @@ const getReceivedRequests = async (req, res) => {
     // console.log("Correct investorId:", investor._id);
 
     // Step 2: Use investor._id to fetch requests
-    const received = await Request.find({ investorId: investor._id })
+    const received = await Request.find({ investorId: investor._id, senderRole: "startup" })
       .populate("startupId");
 
     // console.log("details:", received);
@@ -154,26 +156,26 @@ const updateRequestStatus = async (req, res) => {
       { new: true }
     );
     if (!updated) {
-        return res.status(404).json({ message: "Request not found" });
+      return res.status(404).json({ message: "Request not found" });
     }
     // 3. Notify the OTHER party
     // The 'updated' object contains investorId and startupId (Profile IDs)
     // We need to find the User ID of the party who SHOULD RECEIVE the notification.
-    
+
     // Logic: If the current user is the Startup, notify the Investor.
     // If the current user is the Investor, notify the Startup.
     // Since we don't easily know who "sent" the action here without querying, 
     // we can simply emit to BOTH parties or check the current user.
-    
+
     // Robust approach: Fetch both profiles to get their UserIDs
     const startupProfile = await Startup.findById(updated.startupId);
     const investorProfile = await Investor.findById(updated.investorId);
     if (startupProfile && startupProfile.userId) {
-        io.to(startupProfile.userId.toString()).emit("request-status-updated", updated);
+      io.to(startupProfile.userId.toString()).emit("request-status-updated", updated);
     }
-    
+
     if (investorProfile && investorProfile.userId) {
-        io.to(investorProfile.userId.toString()).emit("request-status-updated", updated);
+      io.to(investorProfile.userId.toString()).emit("request-status-updated", updated);
     }
     return res.status(200).json({ message: "Request updated", data: updated });
   } catch (err) {
@@ -181,35 +183,82 @@ const updateRequestStatus = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
-const checkingAlreadySent=async(req,res)=>{
-  try{
-    const startupId=req.userId;
-const investorId = req.query.investorId;   
+const checkingAlreadySent = async (req, res) => {
+  try {
+    const startupId = req.userId;
+    const investorId = req.query.investorId;
     const requestExist = await Request.findOne({ investorId, startupId });
-    if(requestExist){
-      return res.status(400).json({message:"The request is already sent"})
+    if (requestExist) {
+      return res.status(400).json({ message: "The request is already sent" })
     }
-    return res.status(200).json({message:"The request is not sent"});
+    return res.status(200).json({ message: "The request is not sent" });
   }
-  catch(err){
-       return res.status(500).json({ message: "Server error" });
+  catch (err) {
+    return res.status(500).json({ message: "Server error" });
   }
 }
 
 //it is for sending request from investor to stattup
-const checkingInvestorAlreadySent=async(req,res)=>{
-  try{
-    const investorId=req.userId;
-const startupId = req.query.startupId;   
+const checkingInvestorAlreadySent = async (req, res) => {
+  try {
+    const investorId = req.userId;
+    const startupId = req.query.startupId;
     const requestExist = await Request.findOne({ investorId, startupId });
-    if(requestExist){
-      return res.status(400).json({message:"The request is already sent"})
+    if (requestExist) {
+      return res.status(400).json({ message: "The request is already sent" })
     }
-    return res.status(200).json({message:"The request is not sent"});
-  }
-  catch(err){
-       return res.status(500).json({ message: "Server error" });
-  }
+    return res.status(200).json({ message: "The request is not sent" });
+  
+  } catch (err) {
+  return res.status(500).json({ message: "Server error" });
 }
-export { sendStartupRequest,sendInvestorRequest,getSentRequests,getReceivedRequests,updateRequestStatus,checkingAlreadySent,checkingInvestorAlreadySent };
+}
 
+// ---------------------- NEW: BIDIRECTIONAL LOGIC ----------------------
+
+// 1. Investor checks what they SENT
+const getInvestorSentRequests = async (req, res) => {
+  try {
+    const investor = await Investor.findOne({ userId: req.userId });
+    if (!investor) return res.status(404).json({ message: "Investor not found" });
+
+    const sent = await Request.find({
+      investorId: investor._id,
+      senderRole: "investor"
+    }).populate("startupId");
+
+    return res.status(200).json({ data: sent });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 2. Startup checks what they RECEIVED
+const getStartupReceivedRequests = async (req, res) => {
+  try {
+    const startup = await Startup.findOne({ userId: req.userId });
+    if (!startup) return res.status(404).json({ message: "Startup not found" });
+
+    const received = await Request.find({
+      startupId: startup._id,
+      senderRole: "investor"
+    }).populate("investorId");
+
+    return res.status(200).json({ data: received });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+export {
+  sendStartupRequest,
+  sendInvestorRequest,
+  getSentRequests,
+  getReceivedRequests,
+  updateRequestStatus,
+  checkingAlreadySent,
+  checkingInvestorAlreadySent,
+  getInvestorSentRequests,
+  getStartupReceivedRequests
+};

@@ -34,8 +34,8 @@ const ChatPage = () => {
 
     // SOCKET CONNECTION
     useEffect(() => {
-        // const newSocket = io("http://localhost:5000");
-        const newSocket = io("https://investormatch-backend-yn2k.onrender.com");
+        const newSocket = io("http://localhost:5000");
+        // const newSocket = io("https://investormatch-backend-yn2k.onrender.com");
         console.log("Soccket:", newSocket);
         setSocket(newSocket);
         return () => newSocket.close();
@@ -57,12 +57,12 @@ const ChatPage = () => {
         if (!selectedChat || !socket) return;
         socket.emit("join-room", selectedChat.requestId);
 
-        // axios.get(`http://localhost:5000/api/messages/${selectedChat.requestId}`, {
-        //     headers: { Authorization: `Bearer ${getToken()}` }
-        // })
-        axios.get(`https://investormatch-backend-yn2k.onrender.com/api/messages/${selectedChat.requestId}`, {
+        axios.get(`http://localhost:5000/api/messages/${selectedChat.requestId}`, {
             headers: { Authorization: `Bearer ${getToken()}` }
         })
+            // axios.get(`https://investormatch-backend-yn2k.onrender.com/api/messages/${selectedChat.requestId}`, {
+            //     headers: { Authorization: `Bearer ${getToken()}` }
+            // })
             .then(res => {
                 // ROBUST ERROR HANDLING: Ensure data is an array
                 if (Array.isArray(res.data)) {
@@ -99,12 +99,12 @@ const ChatPage = () => {
             const token = getToken();
             if (!token) return;
             try {
-                // const res = await axios.get("http://localhost:5000/api/chat/users", {
-                //     headers: { Authorization: `Bearer ${token}` }
-                // });
-                const res = await axios.get("https://investormatch-backend-yn2k.onrender.com/api/chat/users", {
+                const res = await axios.get("http://localhost:5000/api/chat/users", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                // const res = await axios.get("https://investormatch-backend-yn2k.onrender.com/api/chat/users", {
+                //     headers: { Authorization: `Bearer ${token}` }
+                // });
 
                 // Ensure we handle the specific "accepted" array if that's what the backend sends
                 // Based on previous checks, backend sends { accepted: [...] }
