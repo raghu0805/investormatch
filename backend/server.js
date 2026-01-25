@@ -1,7 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import User from "./models/User.js";
-import auth from './middleware/authMiddleware.js'
 import cors from 'cors'
 import authRoutes from './routes/authRoutes.js';
 import startupRoutes from './routes/startupRoutes.js';
@@ -9,7 +7,7 @@ import investorRoutes from './routes/investorRoutes.js';
 import connectDB from './config/db.js';
 import requestRoutes from "./routes/requestRoutes.js";
 import http from 'http';
-import {Server} from 'socket.io';
+import { Server } from 'socket.io';
 import messageRoutes from './routes/messageRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import SocketHandler from './socket/sockethandler.js';
@@ -17,11 +15,15 @@ dotenv.config();
 connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
-const server=http.createServer(app);
-const io=new Server(server,{
-  cors:{origin:"http://localhost:5173"}
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: ["http://localhost:5173", "https://investmatch.me", "https://www.investmatch.me"] }
 })
 
+
+
+//make accessible to global.
+app.set("io", io);
 SocketHandler(io);
 
 

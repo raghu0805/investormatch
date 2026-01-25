@@ -137,22 +137,47 @@ const getReceivedRequests = async (req, res) => {
   }
 };
 
+
+
 const updateRequestStatus = async (req, res) => {
   try {
     const { requestId, status } = req.body;
-
+    // 1. Get IO instance
+    const io = req.app.get("io");
     if (!["accepted", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
-
+    // 2. Find and update the request
     const updated = await Request.findByIdAndUpdate(
       requestId,
       { status },
       { new: true }
     );
-
+    if (!updated) {
+        return res.status(404).json({ message: "Request not found" });
+    }
+    // 3. Notify the OTHER party
+    // The 'updated' object contains investorId and startupId (Profile IDs)
+    // We need to find the User ID of the party who SHOULD RECEIVE the notification.
+    
+    // Logic: If the current user is the Startup, notify the Investor.
+    // If the current user is the Investor, notify the Startup.
+    // Since we don't easily know who "sent" the action here without querying, 
+    // we can simply emit to BOTH parties or check the current user.
+    
+    // Robust approach: Fetch both profiles to get their UserIDs
+    const startupProfile = await Startup.findById(updated.startupId);
+    const investorProfile = await Investor.findById(updated.investorId);
+    if (startupProfile && startupProfile.userId) {
+        io.to(startupProfile.userId.toString()).emit("request-status-updated", updated);
+    }
+    
+    if (investorProfile && investorProfile.userId) {
+        io.to(investorProfile.userId.toString()).emit("request-status-updated", updated);
+    }
     return res.status(200).json({ message: "Request updated", data: updated });
   } catch (err) {
+    console.log(err);
     return res.status(500).json({ message: "Server error" });
   }
 };

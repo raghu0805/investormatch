@@ -32,11 +32,12 @@ const ChatPage = () => {
 
     // SOCKET CONNECTION
     useEffect(() => {
-        const newSocket = io("http://localhost:5000");
+        // const newSocket = io("http://localhost:5000");
+        const newSocket = io("https://investormatch-backend-yn2k.onrender.com");
+        console.log("Soccket:", newSocket);
         setSocket(newSocket);
         return () => newSocket.close();
     }, []);
-
     // LISTEN FOR MESSAGES
     useEffect(() => {
         if (!socket) return;
@@ -54,7 +55,10 @@ const ChatPage = () => {
         if (!selectedChat) return;
         socket.emit("join-room", selectedChat.requestId);
 
-        axios.get(`http://localhost:5000/api/messages/${selectedChat.requestId}`, {
+        // axios.get(`http://localhost:5000/api/messages/${selectedChat.requestId}`, {
+        //     headers: { Authorization: `Bearer ${getToken()}` }
+        // })
+        axios.get(`https://investormatch-backend-yn2k.onrender.com/api/messages/${selectedChat.requestId}`, {
             headers: { Authorization: `Bearer ${getToken()}` }
         })
             .then(res => {
@@ -93,7 +97,10 @@ const ChatPage = () => {
             const token = getToken();
             if (!token) return;
             try {
-                const res = await axios.get("http://localhost:5000/api/chat/users", {
+                // const res = await axios.get("http://localhost:5000/api/chat/users", {
+                //     headers: { Authorization: `Bearer ${token}` }
+                // });
+                const res = await axios.get("https://investormatch-backend-yn2k.onrender.com/api/chat/users", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
@@ -219,7 +226,7 @@ const ChatPage = () => {
                                     text-white p-3 rounded-xl transition-all shadow-[0_0_15px_rgba(220,38,38,0.4)]
                                     hover:shadow-[0_0_25px_rgba(220,38,38,0.6)]"
                                 >
-                                    <HiPaperAirplane className="text-xl transform rotate-90" />
+                                    <HiPaperAirplane className="text-xl" />
                                 </button>
                             </form>
                         </div>

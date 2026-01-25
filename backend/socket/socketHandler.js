@@ -19,6 +19,16 @@ export default function SocketHandler(io){
                 io.to(data.roomId).emit("message-received",message);
             }
         });
+
+
+        //3.Join User Specific Room (For Notifications)
+        socket.on("join-user-room", (userId) => {
+        if (userId) {
+            socket.join(userId);
+            console.log(`User joined notification room: ${userId}`);
+        }
+    });
+
         socket.on("disconnect",()=>{
             console.log("user disconnected");
         })

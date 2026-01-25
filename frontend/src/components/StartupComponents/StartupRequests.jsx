@@ -3,11 +3,37 @@ import api from "../../utils/api.js";
 import toast from "react-hot-toast";
 import Navbar from "../Navbar.jsx";
 import {  useNavigate } from "react-router-dom";
+import io from "socket.io-client";
+import { jwtDecode } from "jwt-decode"; 
 
 export default function StartupRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const Navigate=useNavigate();
+    //SOCKET LOGIC
+  useEffect(() => {
+    // 1. Connect
+    // const socket = io("http://localhost:5000");
+    const socket = io("https://investormatch-backend-yn2k.onrender.com");
+    
+    // Use your backend URL
+    // 2. Get User ID from token
+    const token = localStorage.getItem("token");
+    if (token) {
+        const decoded = jwtDecode(token);
+        const myUserId = decoded.id; // Ensure this matches your token structure
+        // 3. Join User Room
+        socket.emit("join-user-room", myUserId);
+        // 4. Listen for updates
+        socket.on("request-status-updated", (data) => {
+            console.log("Status updated real-time:", data);
+            fetchRequests(); // Refetch data to update UI
+        });
+    }    // Cleanup
+    return () => {
+        socket.disconnect();
+    };
+  }, []);
   const fetchRequests = async () => {
     try {
       const res = await api.get("/request/sent");
