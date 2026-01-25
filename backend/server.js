@@ -10,7 +10,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import messageRoutes from './routes/messageRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
-import SocketHandler from './socket/sockethandler.js';
+import SocketHandler from './socket/socketHandler.js';
 dotenv.config();
 connectDB();
 const app = express();
