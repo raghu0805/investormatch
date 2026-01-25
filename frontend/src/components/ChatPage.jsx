@@ -54,7 +54,7 @@ const ChatPage = () => {
 
     // FETCH HISTORY & JOIN ROOM
     useEffect(() => {
-        if (!selectedChat) return;
+        if (!selectedChat || !socket) return;
         socket.emit("join-room", selectedChat.requestId);
 
         // axios.get(`http://localhost:5000/api/messages/${selectedChat.requestId}`, {
@@ -81,7 +81,7 @@ const ChatPage = () => {
     // SEND MESSAGE
     const handleSend = (e) => {
         e.preventDefault();
-        if (!newMessage.trim() || !selectedChat) return;
+        if (!newMessage.trim() || !selectedChat || !socket) return;
 
         const msgData = {
             roomId: selectedChat.requestId,
