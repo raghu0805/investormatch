@@ -9,7 +9,7 @@ export default function MatchedInvestors() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [requestStatus, setRequestStatus] = useState(false);
-  
+
   const handleSendRequest = async (investorId) => {
     try {
       // alert(investorId);
@@ -17,36 +17,36 @@ export default function MatchedInvestors() {
       setRequestStatus(!requestStatus);
       toast.success("Request sent successfully");
     } catch (err) {
-      toast.error("message:",err.response?.data?.message || "Failed to send request")
-      console.log("message:",err.response?.data?.message);
+      toast.error("message:", err.response?.data?.message || "Failed to send request")
+      console.log("message:", err.response?.data?.message);
     }
   };
 
   const fetchMatches = async () => {
-  try {
-    const res = await api.get("/startup/match-investors");
+    try {
+      const res = await api.get("/startup/match-investors");
 
-    // setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
-    setMatches(res.data.matches || []);
+      // setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
+      setMatches(Array.isArray(res.data.matches) ? res.data.matches : []);
 
 
-    if (res.data.matches) {
-      const investorId = res.data.matches._id;
+      if (res.data.matches) {
+        const investorId = res.data.matches._id;
 
-      const investor_data = await api.get(
-        `/request/check_request/from-startup?investorId=${investorId}`
-      );
-      console.log(investor_data)
+        const investor_data = await api.get(
+          `/request/check_request/from-startup?investorId=${investorId}`
+        );
+        console.log(investor_data)
 
-      setRequestStatus(investor_data.data.exists === true);
+        setRequestStatus(investor_data.data.exists === true);
+      }
+
+    } catch (err) {
+      setRequestStatus(!requestStatus);
+      console.log("Error fetching matches", err);
     }
-
-  } catch (err) {
-          setRequestStatus(!requestStatus);
-    console.log("Error fetching matches", err);
-  }
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   useEffect(() => {
     fetchMatches();
@@ -107,7 +107,7 @@ export default function MatchedInvestors() {
 
 
                 <button
-                  onClick={() => navigate(`/startup/profile/${startup.userId}`,{state:{from:"matched"}})}
+                  onClick={() => navigate(`/investor/profile/${investor.userId}`, { state: { from: "matched" } })}
                   className="mt-8 w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg text-white font-semibold"
                 >
                   View Full Profile
@@ -115,17 +115,17 @@ export default function MatchedInvestors() {
 
 
                 {/* Send Request */}
-<button
-  disabled={requestStatus === true}
-  onClick={() => handleSendRequest(investor._id)}
-  className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
-    ${requestStatus === true 
-      ? "bg-gray-500 cursor-not-allowed" 
-      : "bg-green-600 hover:bg-green-700"}
+                <button
+                  disabled={requestStatus === true}
+                  onClick={() => handleSendRequest(investor._id)}
+                  className={`mt-4 w-full py-2 rounded-lg text-white font-semibold 
+    ${requestStatus === true
+                      ? "bg-gray-500 cursor-not-allowed"
+                      : "bg-green-600 hover:bg-green-700"}
   `}
->
-  {requestStatus === true ? "Request Already Sent" : "Send Request"}
-</button>
+                >
+                  {requestStatus === true ? "Request Already Sent" : "Send Request"}
+                </button>
 
 
               </div>

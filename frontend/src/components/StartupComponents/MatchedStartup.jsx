@@ -18,7 +18,7 @@ export default function MatchedStartup() {
             toast.success("Request sent successfully");
         } catch (err) {
             toast.error("message:", err.response?.data?.message || "Failed to send request");
-            console.log("messaage:",err.response?.data?.message)
+            console.log("messaage:", err.response?.data?.message)
         }
     };
 
@@ -27,7 +27,7 @@ export default function MatchedStartup() {
             const res = await api.get("/investor/match-startups");
 
             // setMatches(res.data.topInvestor ? [res.data.topInvestor] : []);
-            setMatches(res.data.matches || []);
+            setMatches(Array.isArray(res.data.matches) ? res.data.matches : []);
 
 
             if (res.data.matches) {
