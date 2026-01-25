@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
 import Navbar from "../Navbar";
 import io from "socket.io-client";
@@ -7,6 +8,7 @@ import { jwtDecode } from "jwt-decode";
 export default function InvestorRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   //SOCKET LOGIC
   useEffect(() => {
@@ -112,6 +114,21 @@ export default function InvestorRequests() {
                   className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold"
                 >
                   Reject
+                </button>
+
+                <button
+                  onClick={() => navigate("/chats", {
+                    state: {
+                      selectedChat: {
+                        requestId: req._id,
+                        name: req.startupId?.startupName || "Unknown Startup",
+                        // You might need other fields here depending on what ChatPage expects in `chat` object
+                      }
+                    }
+                  })}
+                  className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-semibold"
+                >
+                  Message
                 </button>
               </div>
 

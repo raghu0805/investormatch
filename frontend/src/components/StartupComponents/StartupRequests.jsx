@@ -2,36 +2,36 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api.js";
 import toast from "react-hot-toast";
 import Navbar from "../Navbar.jsx";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import io from "socket.io-client";
-import { jwtDecode } from "jwt-decode"; 
+import { jwtDecode } from "jwt-decode";
 
 export default function StartupRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const Navigate=useNavigate();
-    //SOCKET LOGIC
+  const Navigate = useNavigate();
+  //SOCKET LOGIC
   useEffect(() => {
     // 1. Connect
     // const socket = io("http://localhost:5000");
     const socket = io("https://investormatch-backend-yn2k.onrender.com");
-    
+
     // Use your backend URL
     // 2. Get User ID from token
     const token = localStorage.getItem("token");
     if (token) {
-        const decoded = jwtDecode(token);
-        const myUserId = decoded.id; // Ensure this matches your token structure
-        // 3. Join User Room
-        socket.emit("join-user-room", myUserId);
-        // 4. Listen for updates
-        socket.on("request-status-updated", (data) => {
-            console.log("Status updated real-time:", data);
-            fetchRequests(); // Refetch data to update UI
-        });
+      const decoded = jwtDecode(token);
+      const myUserId = decoded.id; // Ensure this matches your token structure
+      // 3. Join User Room
+      socket.emit("join-user-room", myUserId);
+      // 4. Listen for updates
+      socket.on("request-status-updated", (data) => {
+        console.log("Status updated real-time:", data);
+        fetchRequests(); // Refetch data to update UI
+      });
     }    // Cleanup
     return () => {
-        socket.disconnect();
+      socket.disconnect();
     };
   }, []);
   const fetchRequests = async () => {
@@ -138,7 +138,24 @@ export default function StartupRequests() {
 
               <button
                 onClick={() =>
-                  Navigate(`/investor/profile/${req.investorId?.userId}`,{state:{from:"request"}})
+                  Navigate(`/chats`, {
+                    state: {
+                      selectedChat: {
+                        requestId: req._id,
+                        name: req.investorId?.investorName || "Unknown Investor",
+                        // You might need other fields here depending on what ChatPage expects
+                      },
+                    },
+                  })
+                }
+                className="mt-4 w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-white font-semibold"
+              >
+                Message
+              </button>
+
+              <button
+                onClick={() =>
+                  Navigate(`/investor/profile/${req.investorId?.userId}`, { state: { from: "request" } })
                 }
                 className="mt-4 w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg text-white font-semibold"
               >

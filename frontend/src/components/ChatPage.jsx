@@ -4,13 +4,15 @@ import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
 import { HiPaperAirplane } from "react-icons/hi2";
+import { useLocation } from "react-router-dom";
 
 const getToken = () => { return localStorage.getItem("token") };
 
 const ChatPage = () => {
     const [socket, setSocket] = useState(null);
     const [UserList, setUserList] = useState({ accepted: [], sent: [], interest: [] });
-    const [selectedChat, setSelectedChat] = useState(null);
+    const location = useLocation();
+    const [selectedChat, setSelectedChat] = useState(location.state?.selectedChat || null);
     const [messages, setMessages] = useState([]);
     const [newMessage, setNewMessage] = useState("");
     const scrollRef = useRef();
