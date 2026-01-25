@@ -45,6 +45,10 @@ app.use("/api/request", requestRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/chat", chatRoutes);
 
+app.get("/api", (req, res) => {
+  res.json({ message: "API is running" });
+});
+
 app.use("/uploads", express.static("uploads"));
 app.get("/", (req, res) => {
   res.json({ message: "get route" });
