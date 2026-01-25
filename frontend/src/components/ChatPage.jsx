@@ -106,7 +106,7 @@ const ChatPage = () => {
 
                 // Ensure we handle the specific "accepted" array if that's what the backend sends
                 // Based on previous checks, backend sends { accepted: [...] }
-                const users = res.data.accepted ? res.data : { accepted: [], sent: [], interest: [] };
+                const users = res.data?.accepted ? res.data : { accepted: [], sent: [], interest: [] };
                 setUserList(users);
 
             } catch (err) {
