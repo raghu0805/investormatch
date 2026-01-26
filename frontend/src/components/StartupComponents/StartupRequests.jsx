@@ -13,8 +13,8 @@ export default function StartupRequests() {
   //SOCKET LOGIC
   useEffect(() => {
     // 1. Connect
-    const socket = io("http://localhost:5000");
-    // const socket = io("https://investormatch-backend-yn2k.onrender.com");
+    // const socket = io("http://localhost:5000");
+    const socket = io("https://investormatch-backend-yn2k.onrender.com");
 
     // Use your backend URL
     // 2. Get User ID from token
