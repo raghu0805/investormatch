@@ -97,7 +97,7 @@ The frontend is a React + Vite application.
     # Webhooks (Optional/Custom)
     VITE_N8N_NEWS_URL=[url]VITE_N8N_email_URL=[url]
 
-    for webhook contact me- [imraghu0805@gmail.com]```
+    for webhook contact me- [imraghu0805@gmail.com]
 
 4.  Start the Application:
     ```bash
