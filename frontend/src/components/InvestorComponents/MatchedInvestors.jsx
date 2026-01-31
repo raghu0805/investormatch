@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 export default function MatchedInvestors() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [requestStatus, setRequestStatus] = useState(false);
 
   const handleSendRequest = async (investorId) => {
@@ -46,7 +46,9 @@ export default function MatchedInvestors() {
 
   if (loading)
     return (
-      <div className="text-white text-center mt-10 text-xl">Loading matches...</div>
+      <div className="min-h-screen bg-gray-900 text-white flex justify-center items-center text-xl">
+        Loading matches...
+      </div>
     );
 
   return (

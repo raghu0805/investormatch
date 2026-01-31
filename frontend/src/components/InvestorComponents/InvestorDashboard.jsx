@@ -7,10 +7,10 @@ import MatchedStartup from "../StartupComponents/MatchedStartup";
 export default function InvestorDashboard() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchProfile = async () => {
-    setLoading(true);
+    // setLoading(true); // No need to set here as it's true by default
 
     try {
       const res = await api.get("/investor/me");
@@ -31,7 +31,11 @@ export default function InvestorDashboard() {
   }, []);
 
   if (loading)
-    return <div className="text-white text-center mt-10 text-xl">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex justify-center items-center text-xl">
+        Loading...
+      </div>
+    );
 
   return (
     <>
@@ -103,28 +107,28 @@ export default function InvestorDashboard() {
               >
                 Edit Profile
               </button>
-              
+
 
             </div>
-            
+
           )}
-           <div className="bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-gray-700 mt-8">
-              <h2 className="text-2xl font-semibold mb-4">Find Matching Startups</h2>
-              <p className="mb-4">
-                View startup matched using industry, funding, location, and stage.
-              </p>
-              <button
-                onClick={() => navigate("/investor/matched-startups")}
-                className="px-5 py-3 bg-green-600 hover:bg-green-700 text-lg rounded-xl font-semibold"
-              >
-                View Matches
-              </button>
-            </div>
+          <div className="bg-gray-800/60 backdrop-blur-lg rounded-2xl p-6 shadow-xl border border-gray-700 mt-8">
+            <h2 className="text-2xl font-semibold mb-4">Find Matching Startups</h2>
+            <p className="mb-4">
+              View startup matched using industry, funding, location, and stage.
+            </p>
+            <button
+              onClick={() => navigate("/investor/matched-startups")}
+              className="px-5 py-3 bg-green-600 hover:bg-green-700 text-lg rounded-xl font-semibold"
+            >
+              View Matches
+            </button>
+          </div>
 
         </div>
-        
+
       </div>
-         
+
     </>
 
   );

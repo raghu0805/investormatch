@@ -12,11 +12,11 @@ export default function StartupFullProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const handleNavigation=async()=>{
-    if(location.state?.from==="matched"){
+  const handleNavigation = async () => {
+    if (location.state?.from === "matched") {
       navigate("/startup/matched-investors")
     }
-    else{
+    else {
       navigate("/startup/request")
     }
   }
@@ -35,7 +35,11 @@ export default function StartupFullProfile() {
   }, []);
 
   if (loading)
-    return <div className="text-white text-center mt-10">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex justify-center items-center text-xl">
+        Loading...
+      </div>
+    );
 
   if (error)
     return (
@@ -49,7 +53,7 @@ export default function StartupFullProfile() {
       {/* <Navbar /> */}
 
       <div className="min-h-screen bg-gray-900 text-white p-6">
-        
+
         <div className="max-w-3xl mx-auto bg-gray-800 p-8 rounded-2xl shadow-xl">
 
           <h1 className="text-3xl font-bold mb-6">
@@ -91,7 +95,7 @@ export default function StartupFullProfile() {
             onClick={() => handleNavigation()}
             className="mt-6 w-full bg-blue-600 py-3 rounded-lg hover:bg-blue-700 font-semibold"
           >
-            Back 
+            Back
           </button>
         </div>
 
