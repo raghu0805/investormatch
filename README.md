@@ -1,93 +1,133 @@
-# 🚀 InvestMatch – Startup & Investor Matching Platform (MERN)
+# InvestMatch 🚀
 
-A full-stack web platform that connects **startups** with **investors** using a rule-based **Matching Engine**.  
-Startups can create profiles, view matching investors, and send connection requests.  
-Investors can manage profile details and accept/reject startup requests.
+**InvestMatch** is a full-stack web application designed to bridge the gap between Startups and Investors. It simplifies the fundraising process by using a matching algorithm to connect founders with the right investors based on industry, funding needs, and risk appetite.
 
-This project is built using **MERN Stack** with JWT authentication and clean, modular architecture.
----
+## 🌟 Key Features
 
-## ⭐ Features
-
-### 🔐 Authentication
-- User registration (Startup / Investor)
-- Secure login with JWT
-- Protected routes (Dashboard, Profile pages)
-
-### 🧑‍💼 Startup Features
-- Create/Edit startup profile  
-- View dashboard  
-- See matched investors (based on matching engine)  
-- Send requests to investors  
-- Track request statuses (pending/accepted/rejected)
-
-### 💼 Investor Features
-- Create/Edit investor profile  
-- View dashboard  
-- See received requests  
-- Accept/Reject requests  
-
-### 🎯 Matching Engine (Rule-Based)
-Matches startups with investors using scoring logic:
-
-| Criteria | Score |
-|---------|--------|
-| Industry match | +40 |
-| Funding range fit | +30 |
-| Location match | +20 |
-| Stage/interest match | +10 |
-
-Investors are returned in **sorted order** (highest score first).
+*   **👥 User Roles**: Separate dashboards and profiles for **Startups** and **Investors**.
+*   **🤝 Smart Matching**: Intelligent matching algorithm to find compatible connections.
+*   **💬 Real-Time Chat**: Integrated messaging system using **Socket.io** for instant communication between matched users.
+*   **🔐 Secure Authentication**: JWT-based authentication with Google OAuth integration.
+*   **🔔 Request System**: Connection request workflow (Send, Accept, Reject).
+*   **📂 Profile Management**: Detailed profiles with pitch decks (Startups) and investment preferences (Investors).
+*   **📱 Responsive Design**: Built with specific focus on user experience.
 
 ## 🛠️ Tech Stack
 
-### **Frontend**
-- React (Vite)
-- Axios
-- React Router
-- Tailwind CSS
-- React Hot Toast
+### Frontend
+*   **React.js** (Vite)
+*   **Tailwind CSS** (Styling)
+*   **Framer Motion** (Animations)
+*   **Socket.io Client** (Real-time communication)
+*   **React Router DOM** (Navigation)
+*   **Axios** (API Requests)
 
-### **Backend**
-- Node.js
-- Express.js
-- MongoDB + Mongoose
-- JWT Authentication
-- CORS
-- dotenv
+### Backend
+*   **Node.js & Express.js** (Server)
+*   **MongoDB & Mongoose** (Database)
+*   **Socket.io** (WebSockets)
+*   **JWT & Bcrypt** (Auth & Security)
+*   **Multer** (File Uploads)
 
-### **Tools**
-- Postman (API Testing)
-- Render (Backend Deployment)
-- Vercel (Frontend Deployment)
 ---
 
-## 📁 Folder Structure
+## 🚀 Getting Started
 
-/backend
-├── controllers
-├── models
-├── routes
-├── middleware
-├── config
-└── server.js
+Follow these step-by-step instructions to set up the project locally.
 
-/frontend
-├── src
-│ ├── pages
-│ ├── components
-│ ├── context
-│ ├── utils
-│ └── App.jsx
-└── index.html
+### Prerequisites
+*   Node.js (v14 or higher)
+*   MongoDB (Local or Atlas URL)
+*   Git
 
-PORT=5000
-MONGO_URI=mongodb://localhost:27017/investorDB
-JWT_SECRET=xxxxxxxx
-JWT_EXPIRES_IN=7d
+### 1. Clone the Repository
+```bash
+git clone https://github.com/your-username/investmatch.git
+cd investmatch
+```
 
-✔ Startup Flow
-Login → Dashboard → Create/Edit Profile → Matched Investors → Send Request → View Sent Requests → Logout
+### 2. Backend Setup (`/backend`)
 
-✔ Investor Flow
-Login → Dashboard → Create/Edit Profile → View Received Requests → Accept/Reject → Logout
+The backend runs on Node.js and Express.
+
+1.  Navigate to the backend folder:
+    ```bash
+    cd backend
+    ```
+
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3.  **Configure Environment Variables**:
+    Create a file named `.env` in the `backend` directory and add the following keys:
+    ```env
+    PORT=5000
+    MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/yourdbname
+    JWT_SECRET=your_super_secret_jwt_key
+    ```
+
+4.  Start the Server:
+    ```bash
+    npm run dev
+    ```
+    ✅ The server should be running on `http://localhost:5000`.
+
+### 3. Frontend Setup (`/frontend`)
+
+The frontend is a React + Vite application.
+
+1.  Open a new terminal and navigate to the frontend folder:
+    ```bash
+    cd frontend
+    ```
+
+2.  Install dependencies:
+    ```bash
+    npm install
+    ```
+
+3.  **Configure Environment Variables**:
+    Create a file named `.env` in the `frontend` directory and add the following keys:
+    ```env
+    # Google OAuth Client ID (Required for Login)
+    VITE_GOOGLE_CLIENT_ID=your_google_client_id_from_console
+
+    # Webhooks (Optional/Custom)
+    
+
+    for webhook contact me- [imraghu0805@gmail.com]
+
+4.  Start the Application:
+    ```bash
+    npm run dev
+    
+    ✅ The application should be running on `http://localhost:5173`.
+
+---
+
+## 📂 Project Structure
+
+```
+investmatch/
+├── backend/            # Express, MongoDB, Socket.io Server
+│   ├── .env            # Backend Environment Variables
+│   ├── config/         # Database configuration
+│   ├── controllers/    # Route logic
+│   ├── models/         # Mongoose Schemas
+│   ├── routes/         # API endpoints
+│   ├── socket/         # Real-time logic
+│   └── server.js       # Entry point
+│
+└── frontend/           # React application
+    ├── .env            # Frontend Environment Variables
+    ├── src/
+    │   ├── components/ # Reusable UI components
+    │   ├── pages/      # Application pages
+    │   ├── context/    # Context API (Auth, etc.)
+    │   └── utils/      # API helpers
+```
+
+## 🤝 Contribution
+Contributions are welcome! Please fork the repository and create a pull request.
