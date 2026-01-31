@@ -95,7 +95,8 @@ The frontend is a React + Vite application.
     VITE_GOOGLE_CLIENT_ID=your_google_client_id_from_console
 
     # Webhooks (Optional/Custom)
-    VITE_N8N_NEWS_URL=[url]VITE_N8N_email_URL=[url]
+    VITE_N8N_NEWS_URL=[url]
+    VITE_N8N_email_URL=[url]
 
     for webhook contact me- [imraghu0805@gmail.com]
 
