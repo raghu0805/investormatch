@@ -6,4 +6,4 @@ const ProtectedRoutes = ({ children }) => {
   console.log(token);
   return token ? children : <Navigate to="/login" />;
 }
-export default ProtectedRoutes
+export default ProtectedRoutes;

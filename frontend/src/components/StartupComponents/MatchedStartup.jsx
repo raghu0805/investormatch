@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 export default function MatchedStartup() {
     const navigate = useNavigate();
     const [matches, setMatches] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     // const [requestStatus, setRequestStatus] = useState(false); // Removed global status
 
     const handleSendRequest = async (startupId) => {
@@ -50,7 +50,6 @@ export default function MatchedStartup() {
         return (
             <div className="text-white text-center mt-10 text-xl">Loading matches...</div>
         );
-
     return (
         <>
             {/* <Navbar /> */}
@@ -66,7 +65,6 @@ export default function MatchedStartup() {
                             No matching investors found.
                         </p>
                     )}
-
                     <div className="space-y-6">
                         {matches.map((startup, index) => (
                             <div

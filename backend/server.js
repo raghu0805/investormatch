@@ -19,14 +19,9 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: ["http://localhost:5173", "https://investmatch.me", "https://www.investmatch.me"] }
 })
-
-
-
 //make accessible to global.
 app.set("io", io);
 SocketHandler(io);
-
-
 // Middlewares
 app.use(cors({
   origin: [

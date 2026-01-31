@@ -23,7 +23,7 @@ const handleGoogleLogin = async (response) => {
   try {
     console.log(response)
     const user = jwtDecode(response.credential);
-    console.log(user);
+    console.log("Google User:",user);
     const res = await api.post("/auth/google", {
       mode: "login",
       email: user.email,
