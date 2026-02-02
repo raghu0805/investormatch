@@ -100,7 +100,7 @@ export default function StartupDashboard() {
           </div>
         )}
 
-        {/* 🔥 Floating Message Button */}
+        {/* 🔥 Floating Message Button
         <button
           onClick={() => navigate("/messages")}
           className="
@@ -113,7 +113,7 @@ export default function StartupDashboard() {
           "
         >
           💬
-        </button>
+        </button> */}
       </div>
     </>
   );
