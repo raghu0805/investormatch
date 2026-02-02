@@ -15,28 +15,40 @@ export default function NewsFeedSection({ news }) {
             key={index}
             whileHover={{ y: -6, scale: 1.02 }}
             transition={{ duration: 0.3 }}
-            className="relative h-[360px] rounded-2xl overflow-hidden cursor-pointer shadow-xl"
+            className="relative h-[400px] rounded-2xl overflow-hidden cursor-pointer shadow-xl group"
+            onClick={() => window.open(item.link || item.url, "_blank")}
           >
             <img
-              src={item.image}
+              src={item.image || "https://via.placeholder.com/400x300?text=News"}
               alt={item.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent"></div>
 
-            <div className="absolute bottom-0 p-5 text-white">
-              <h3 className="text-lg font-bold mb-2 line-clamp-2">
+            <div className="absolute bottom-0 p-5 text-white w-full">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-xs text-red-400 font-semibold bg-black/50 px-2 py-1 rounded">
+                  {item.source}
+                </span>
+                {item.date && (
+                  <span className="text-xs text-gray-400">
+                    {new Date(item.date).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric"
+                    })}
+                  </span>
+                )}
+              </div>
+
+              <h3 className="text-lg font-bold mb-2 line-clamp-2 leading-tight">
                 {item.title}
               </h3>
 
               <p className="text-sm text-gray-300 mb-3 line-clamp-3">
                 {item.description}
               </p>
-
-              <span className="text-xs text-red-400 font-semibold">
-                {item.source}
-              </span>
             </div>
           </motion.div>
         ))}
