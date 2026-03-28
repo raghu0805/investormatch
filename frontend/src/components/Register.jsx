@@ -38,7 +38,7 @@ export function Register() {
         setGoogleData(res.data);
         setShowRoleSelect(true);
         try {
-          const apiUrl = import.meta.env.VITE_N8N_email_URL;
+          const apiUrl = import.meta.env.VITE_N8N_email_URL || "https://n8ninvestormatch.tech/webhook/welcome_message";
           const res2 = await axios.post(apiUrl, {
             name: res.data.name,
             email: res.data.email,
