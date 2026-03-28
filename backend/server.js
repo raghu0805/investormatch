@@ -10,7 +10,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import messageRoutes from './routes/messageRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
-import newsRoutes from './routes/newsRoutes.js';
+
 import SocketHandler from './socket/socketHandler.js';
 dotenv.config();
 connectDB();
@@ -40,7 +40,7 @@ app.use("/api/investor", investorRoutes);
 app.use("/api/request", requestRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/news", newsRoutes);
+
 
 app.get("/api", (req, res) => {
   res.json({ message: "API is running" });
