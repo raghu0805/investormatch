@@ -35,8 +35,6 @@ export function Register() {
       console.log(res.data.signupAllowed);
 
       if (res.data.signupAllowed) {
-
-
         setGoogleData(res.data);
         setShowRoleSelect(true);
         try {
