@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import Navbar from "./Navbar";
-import NewsFeedSection from "./NewsFeedSection";
+
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/DataContext";
 import api from "../utils/api";
@@ -9,7 +9,7 @@ import api from "../utils/api";
 export default function LandingPage() {
   const navigate = useNavigate();
   const { token, role } = useContext(AuthContext);
-  const [News, SetNews] = useState(null);
+
 
   // useEffect(() => {
   //   if (token && role) {
@@ -17,19 +17,7 @@ export default function LandingPage() {
   //   }
   // }, [token, role, navigate]);
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        // Use the backend proxy route (baseURL is already set in api.js)
-        const result = await api.get("/news");
-        console.log(result.data);
-        SetNews(result.data);
-      } catch (err) {
-        console.error("Error fetching news:", err);
-      }
-    };
-    fetchNews();
-  }, []);
+
 
 
   return (
@@ -133,7 +121,6 @@ export default function LandingPage() {
 
         </div>
       </div>
-      <NewsFeedSection news={News} />
     </>
   );
 }
