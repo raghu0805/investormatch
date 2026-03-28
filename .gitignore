@@ -1,5 +1,9 @@
 node_modules/
+# Environment variables
 .env
+.env.*
+frontend/.env
+backend/.env
 dist/
 build/
 .DS_Store
