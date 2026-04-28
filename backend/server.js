@@ -18,7 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: ["http://localhost:5173", "https://investmatch.me", "https://www.investmatch.me"] }
+  cors: { origin: ["http://localhost:5173", "https://investmatch.me", "https://www.investmatch.me", "https://investormatch-git-master-raghu0805s-projects.vercel.app"] }
 })
 //make accessible to global.
 app.set("io", io);
@@ -29,6 +29,7 @@ app.use(cors({
     "http://localhost:5173",
     "https://investmatch.me",
     "https://www.investmatch.me",
+    "https://investormatch-git-master-raghu0805s-projects.vercel.app",
   ],
   credentials: true
 }));
