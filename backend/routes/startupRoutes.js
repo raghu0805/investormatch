@@ -3,7 +3,7 @@ import { createStartupProfile, getMyStartupProfile, updateStartupProfile,matchIn
 import authMiddleware from "../middleware/authMiddleware.js";
 const router=express.Router();
 router.post("/create",authMiddleware,createStartupProfile);
-router.get("/me",authMiddleware,getMyStartupProfile,updateStartupProfile);
+router.get("/me", authMiddleware, getMyStartupProfile);
 router.put("/update",authMiddleware,updateStartupProfile);
 router.get("/match-investors",authMiddleware,matchInvestors);
 router.get("/profile/:userId", authMiddleware, getStartupProfileById);

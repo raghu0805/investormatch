@@ -7,13 +7,15 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "230231015330-8mb8t6hv76vdkeccuu8n29g51i3kb3fn.apps.googleusercontent.com";
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <GoogleOAuthProvider clientId="230231015330-8mb8t6hv76vdkeccuu8n29g51i3kb3fn.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId={googleClientId}>
       <DataContext>
         <BrowserRouter>
           <App />
-          <Toaster />
+          <Toaster position="top-right" />
         </BrowserRouter>
       </DataContext>
     </GoogleOAuthProvider>

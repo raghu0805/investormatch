@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
-import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { motion } from "framer-motion";
 import { HiPaperAirplane } from "react-icons/hi2";
 import { useLocation } from "react-router-dom";
+import api, { SOCKET_URL } from "../utils/api";
 
-const getToken = () => { return localStorage.getItem("token") };
+const getToken = () => localStorage.getItem("token");
 
 const ChatPage = () => {
     const [socket, setSocket] = useState(null);
@@ -24,22 +24,20 @@ const ChatPage = () => {
         if (token) {
             try {
                 const decoded = jwtDecode(token);
-                console.log("Decoded:", decoded);
                 setMyId(decoded.id);
             } catch (err) {
-                console.error("Invalid token");
+                console.error("Invalid token:", err);
             }
         }
     }, []);
 
     // SOCKET CONNECTION
     useEffect(() => {
-        // const newSocket = io("http://localhost:5000");
-        const newSocket = io("https://investormatch-backend-yn2k.onrender.com");
-        console.log("Soccket:", newSocket);
+        const newSocket = io(SOCKET_URL);
         setSocket(newSocket);
         return () => newSocket.close();
     }, []);
+
     // LISTEN FOR MESSAGES
     useEffect(() => {
         if (!socket) return;
@@ -57,24 +55,18 @@ const ChatPage = () => {
         if (!selectedChat || !socket) return;
         socket.emit("join-room", selectedChat.requestId);
 
-        // axios.get(`http://localhost:5000/api/messages/${selectedChat.requestId}`, {
-        //     headers: { Authorization: `Bearer ${getToken()}` }
-        // })
-        axios.get(`https://investormatch-backend-yn2k.onrender.com/api/messages/${selectedChat.requestId}`, {
-            headers: { Authorization: `Bearer ${getToken()}` }
-        })
+        api.get(`/messages/${selectedChat.requestId}`)
             .then(res => {
-                // ROBUST ERROR HANDLING: Ensure data is an array
                 if (Array.isArray(res.data)) {
                     setMessages(res.data);
                 } else {
                     console.error("Invalid messages format:", res.data);
-                    setMessages([]); // Fallback to empty array
+                    setMessages([]);
                 }
             })
             .catch(err => {
-                console.error("Error loading messages", err);
-                setMessages([]); // Fallback to empty array
+                console.error("Error loading messages:", err);
+                setMessages([]);
             });
     }, [socket, selectedChat]);
 
@@ -99,18 +91,9 @@ const ChatPage = () => {
             const token = getToken();
             if (!token) return;
             try {
-                // const res = await axios.get("http://localhost:5000/api/chat/users", {
-                //     headers: { Authorization: `Bearer ${token}` }
-                // });
-                const res = await axios.get("https://investormatch-backend-yn2k.onrender.com/api/chat/users", {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                // Ensure we handle the specific "accepted" array if that's what the backend sends
-                // Based on previous checks, backend sends { accepted: [...] }
+                const res = await api.get("/chat/users");
                 const users = res.data?.accepted ? res.data : { accepted: [], sent: [], interest: [] };
                 setUserList(users);
-
             } catch (err) {
                 console.error("Error fetching users:", err);
             }
@@ -159,7 +142,7 @@ const ChatPage = () => {
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-700 to-gray-600 flex items-center justify-center text-lg font-bold">
-                                        {chat.name.charAt(0)}
+                                        {chat.name?.charAt(0) || "U"}
                                     </div>
                                     <div>
                                         <p className="font-bold text-gray-200">{chat.name}</p>
@@ -226,7 +209,7 @@ const ChatPage = () => {
                                     disabled={!newMessage.trim()}
                                     className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed
                                     text-white p-3 rounded-xl transition-all shadow-[0_0_15px_rgba(220,38,38,0.4)]
-                                    hover:shadow-[0_0_25px_rgba(220,38,38,0.6)]"
+                                    hover:shadow-[0_0_25px_rgba(220,38,38,0.6)] cursor-pointer"
                                 >
                                     <HiPaperAirplane className="text-xl" />
                                 </button>

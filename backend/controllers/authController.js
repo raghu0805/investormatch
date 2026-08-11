@@ -1,156 +1,228 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
+// Helper function to sign JWT tokens uniformly
+const createToken = (userId, email, role) => {
+  return jwt.sign(
+    { id: userId, email, role },
+    process.env.JWT_SECRET || 'DEFAULT_INVESTMATCH_SECRET',
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
+};
+
+// Format user payload consistently
+const formatUser = (user) => ({
+  id: user._id,
+  _id: user._id,
+  email: user.email,
+  role: user.role,
+  name: user.name || '',
+  picture: user.picture || null,
+  googleUser: Boolean(user.googleUser)
+});
+
 const signup = async (req, res) => {
   try {
-    const { email, password, role } = req.body;
+    const { email, password, role, name } = req.body;
 
     if (!email || !password || !role) {
-      return res.status(400).json({ error: "All fields are required" });
-
+      return res.status(400).json({ success: false, error: "Email, password, and role are required" });
     }
 
-    //? Email normalization
-    const normalizedemail = email.toLowerCase().trim();
-
-    //? Password validation
-    if (password.length < 8) {
-      return res.status(400).json({ error: "Password should be at least 8 characters" });
-
+    if (!["startup", "investor"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Role must be either 'startup' or 'investor'" });
     }
 
-    //? Check existing user
-    const existuser = await User.findOne({ email: normalizedemail });
-    if (existuser) {
-      return res.status(400).json({ error: "The user already exists!" });
+    // Email normalization
+    const normalizedEmail = email.toLowerCase().trim();
 
+    // Password validation
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: "Password must be at least 6 characters long" });
     }
 
-    //? Hash password
+    // Check existing user
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: "An account with this email already exists" });
+    }
+
+    // Hash password
     const salt = await bcrypt.genSalt(10);
-    const hashedpassword = await bcrypt.hash(password, salt);
-    console.log("hashed password:", hashedpassword, password);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    //? Create new user
+    // Create new user
     const newUser = await User.create({
-      email: normalizedemail,
-      password: hashedpassword,
+      email: normalizedEmail,
+      password: hashedPassword,
       role,
+      name: name ? name.trim() : '',
       googleUser: false,
     });
 
-    //? Send response
+    const token = createToken(newUser._id, newUser.email, newUser.role);
+
     return res.status(201).json({
-      message: "User created successfully",
-      user: {
-        id: newUser._id,
-        email: newUser.email,
-        role: newUser.role,
-      }
+      success: true,
+      message: "Account created successfully",
+      token,
+      user: formatUser(newUser)
     });
 
   } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Signup Error:", err);
+    return res.status(500).json({ success: false, error: "Server error during registration" });
   }
 };
-
-
-
 
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    //? Check required fields
+    // Check required fields
     if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+      return res.status(400).json({ success: false, error: "Email and password are required" });
     }
 
-    //? Normalize email
+    // Normalize email
     const normalizedEmail = email.toLowerCase().trim();
 
-    //? Find user
+    // Find user
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (!existingUser) {
-      return res.status(404).json({ error: "Invalid details" });
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
     }
 
-    //? Compare passwords
+    // Check if account was registered exclusively via Google OAuth without a password
+    if (existingUser.googleUser && !existingUser.password) {
+      return res.status(400).json({
+        success: false,
+        error: "This account was registered using Google OAuth. Please sign in with Google."
+      });
+    }
+
+    if (!existingUser.password) {
+      return res.status(400).json({
+        success: false,
+        error: "No password configured for this account. Please sign in using Google."
+      });
+    }
+
+    // Compare passwords
     const isMatch = await bcrypt.compare(password, existingUser.password);
     if (!isMatch) {
-      return res.status(400).json({ error: "Invalid details" });
+      return res.status(401).json({ success: false, error: "Invalid email or password" });
     }
 
-    const token = jwt.sign({
-      id: existingUser._id,
-      email: existingUser.email
-    }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+    const token = createToken(existingUser._id, existingUser.email, existingUser.role);
 
-    //? Success
     return res.status(200).json({
-      message: "User login successful",
+      success: true,
+      message: "Login successful",
       token,
-      user: {
-        id: existingUser._id,
-        email: existingUser.email,
-        role: existingUser.role,
-      }
+      user: formatUser(existingUser)
     });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Server error" });
+    console.error("Login Error:", error);
+    return res.status(500).json({ success: false, error: "Server error during login" });
   }
 };
 
+const GoogleLogin = async (req, res) => {
+  try {
+    const { mode, email, name, picture } = req.body;
 
-const GoogleLogin=async (req,res)=>{
-  const{mode,email,name,picture}=req.body;
-  const user=await User.findOne({email});
-  if (mode=="login"){
-    if(!user){
-      return res.status(400).json({message:"User not registered"});
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
-    return res.status(200).json({
-      message:"Login success",
-      user,
-      token:createToken(user._id,user.role)
-    })
-  }
-  if(mode=="signup"){
-    if(user){
-      return res.status(400).json({message:"Already registered"});
+
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: normalizedEmail });
+
+    if (mode === "login") {
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not registered. Please sign up first." });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Google login successful",
+        token: createToken(user._id, user.email, user.role),
+        user: formatUser(user)
+      });
     }
-    return res.json({signupAllowed:true,email,name,picture});
+
+    if (mode === "signup") {
+      if (user) {
+        return res.status(400).json({ success: false, message: "Account already exists. Please log in." });
+      }
+      return res.status(200).json({
+        success: true,
+        signupAllowed: true,
+        email: normalizedEmail,
+        name,
+        picture
+      });
+    }
+
+    return res.status(400).json({ success: false, message: "Invalid Google auth mode" });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    return res.status(500).json({ success: false, message: "Server error during Google authentication" });
   }
-}
-//?helper function
-const createToken = (userId, role) => {
-   return jwt.sign(
-      { id: userId, role: role },
-      process.env.JWT_SECRET,
-      { expiresIn:process.env.JWT_EXPIRES_IN }
-   );
 };
-const RegisterRole= async (req, res) => {
+
+const RegisterRole = async (req, res) => {
+  try {
     const { email, name, picture, role } = req.body;
 
-const newUser = await User.create({
-  email: email.toLowerCase().trim(),
-  name,
-  picture,
-  role,
-  googleUser: true,
-  password: null,
-});
+    if (!email || !role) {
+      return res.status(400).json({ success: false, error: "Email and role are required" });
+    }
 
+    const normalizedEmail = email.toLowerCase().trim();
 
-    return res.json({
-        message: "Signup success",
-        token: createToken(newUser._id, newUser.role),
-        user: newUser,
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: "User already exists. Please log in." });
+    }
+
+    const newUser = await User.create({
+      email: normalizedEmail,
+      name: name || '',
+      picture: picture || null,
+      role,
+      googleUser: true,
+      password: null,
     });
+
+    return res.status(201).json({
+      success: true,
+      message: "Signup successful",
+      token: createToken(newUser._id, newUser.email, newUser.role),
+      user: formatUser(newUser),
+    });
+  } catch (error) {
+    console.error("RegisterRole Error:", error);
+    return res.status(500).json({ success: false, error: "Server error during role registration" });
+  }
 };
 
-export { signup, login,GoogleLogin,RegisterRole };
+const getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-password");
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    return res.status(200).json({
+      success: true,
+      user: formatUser(user)
+    });
+  } catch (error) {
+    console.error("getMe Error:", error);
+    return res.status(500).json({ success: false, error: "Server error fetching user profile" });
+  }
+};
+
+export { signup, login, GoogleLogin, RegisterRole, getMe };

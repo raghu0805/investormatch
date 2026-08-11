@@ -1,28 +1,30 @@
-import { useState, useState as useStateRegister } from "react";
-import { motion as motionRegister } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useState, useContext } from "react";
+import { motion } from "framer-motion";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../utils/api";
 import { jwtDecode } from "jwt-decode";
-
-
-
-import { HiMiniEye } from "react-icons/hi2";
-import { HiEyeSlash } from "react-icons/hi2";
+import { HiMiniEye, HiEyeSlash } from "react-icons/hi2";
 import toast from "react-hot-toast";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
+import { AuthContext } from "../context/DataContext";
 
 export function Register() {
   const [viewPassword, setViewPassword] = useState(false);
-  const [email, setEmail] = useStateRegister("");
-  const [password, setPassword] = useStateRegister("");
-  const [role, setRole] = useStateRegister("startup");
-  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("startup");
+  const [loading, setLoading] = useState(false);
   const [googleData, setGoogleData] = useState(null);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
 
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
   const handleGoogleSignup = async (response) => {
     try {
+      setLoading(true);
       const user = jwtDecode(response.credential);
 
       const res = await api.post("/auth/google", {
@@ -31,40 +33,37 @@ export function Register() {
         name: user.name,
         picture: user.picture,
       });
-      console.log(res);
-      console.log(res.data.signupAllowed);
 
       if (res.data.signupAllowed) {
         setGoogleData(res.data);
         setShowRoleSelect(true);
+
+        // Send welcome email webhook via n8n (non-blocking)
         try {
           const apiUrl = import.meta.env.VITE_N8N_email_URL || "https://n8ninvestormatch.tech/webhook/welcome_message";
-          const res2 = await axios.post(apiUrl, {
+          axios.post(apiUrl, {
             name: res.data.name,
             email: res.data.email,
-          });
-
-          console.log("n8n response:", res2.data);
+          }).catch(e => console.warn("n8n webhook notification:", e.message));
         } catch (err) {
           console.error(err);
         }
       }
-    }
-    catch (err) {
-      if (err.response?.data?.message === "Already registered") {
+    } catch (err) {
+      if (err.response?.data?.message === "Already registered" || err.response?.data?.message?.includes("already exists")) {
         toast.error("Account already exists. Please log in.");
         navigate("/login");
-        return;
+      } else {
+        toast.error(err.response?.data?.message || err.response?.data?.error || "Google signup failed");
       }
-
-      // Any other error
-      toast.error("Google signup failed");
+    } finally {
+      setLoading(false);
     }
-
   };
+
   const handleRoleSelect = async (selectedRole) => {
     try {
-      console.log(selectedRole);
+      setLoading(true);
       const res = await api.post("/auth/register-google", {
         email: googleData.email,
         name: googleData.name,
@@ -72,118 +71,142 @@ export function Register() {
         role: selectedRole,
       });
 
-      localStorage.setItem("token", res.data.token);
-      navigate(`/${selectedRole}/dashboard`);
+      const userRole = res.data.user?.role || selectedRole;
+      login(res.data.token, userRole, res.data.user);
+
+      toast.success("Account created successfully!");
+      setShowRoleSelect(false);
+      navigate(`/${userRole}/dashboard`);
     } catch (err) {
-      toast.error(err.response?.data?.error || err.message);
-      console.log(err);
-
+      toast.error(err.response?.data?.error || err.response?.data?.message || "Failed to complete role registration");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const formData = {
-    email,
-    password,
-    role
-  }
+  const handleRegister = async (e) => {
+    if (e) e.preventDefault();
 
-  const handleRegister = async () => {
+    if (!email.trim() || !password) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
     try {
+      setLoading(true);
+      const res = await api.post("/auth/signup", {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        role
+      });
 
-      console.log({ email, password, role });
-      localStorage.setItem("role", role);
-      await api.post("/auth/signup", formData);
-
-      navigate("/login")
-    }
-    catch (err) {
-      toast.error(err.response.data.error)
-      setEmail("");
-      setPassword("");
+      toast.success(res.data.message || "Registration successful! Please log in.");
+      navigate("/login");
+    } catch (err) {
+      const errMsg = err.response?.data?.error || err.response?.data?.message || "Registration failed";
+      toast.error(errMsg);
+    } finally {
+      setLoading(false);
     }
   };
-
 
   return (
     <>
-      {/* BACKGROUND CONTENT */}
-      <div className={showRoleSelect ? "opacity-30" : ""}>
-        <div className="min-h-screen flex items-center justify-center font-[Jaro] 
-        bg-gradient-to-br from-black via-[#0a0a0a] to-[#1a1a1a]">
-
-          <motionRegister.div
+      <div className={showRoleSelect ? "opacity-30 pointer-events-none" : ""}>
+        <div className="min-h-screen flex items-center justify-center font-[Jaro] bg-gradient-to-br from-black via-[#0a0a0a] to-[#1a1a1a] p-4">
+          <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="bg-black/40 backdrop-blur-xl p-10 rounded-2xl shadow-xl 
-            w-full max-w-md border border-gray-700">
-
-            <h1 className="text-4xl text-center text-red-600 mb-8 tracking-wide">
-              REGISTER
+            className="bg-black/60 backdrop-blur-xl p-8 sm:p-10 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700/60"
+          >
+            <h1 className="text-4xl text-center text-red-500 mb-8 tracking-wide font-bold">
+              INVESTMATCH REGISTER
             </h1>
 
-            {/* EMAIL */}
-            <div className="mb-6">
-              <label className="text-gray-300 text-lg">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full mt-2 p-3 bg-gray-900 border border-gray-700 rounded-xl 
-                text-white focus:outline-none focus:ring-2 focus:ring-red-600"
-              />
-            </div>
-
-            {/* PASSWORD */}
-            <div className="mb-6">
-              <label className="text-gray-300 text-lg">Password</label>
-
-              <div className="relative mt-2">
+            <form onSubmit={handleRegister}>
+              {/* NAME */}
+              <div className="mb-4">
+                <label className="text-gray-300 text-lg block mb-1">Name (Optional)</label>
                 <input
-                  type={viewPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-3 pr-12 bg-gray-900 border border-gray-700 rounded-xl 
-                  text-white focus:outline-none focus:ring-2 focus:ring-red-600"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                  className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition"
                 />
+              </div>
 
-                <div
-                  onClick={() => setViewPassword(!viewPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
-                >
-                  {viewPassword ? (
-                    <HiEyeSlash className="text-white text-xl" />
-                  ) : (
-                    <HiMiniEye className="text-white text-xl" />
-                  )}
+              {/* EMAIL */}
+              <div className="mb-4">
+                <label className="text-gray-300 text-lg block mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter your email"
+                  className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition"
+                />
+              </div>
+
+              {/* PASSWORD */}
+              <div className="mb-4">
+                <label className="text-gray-300 text-lg block mb-1">Password</label>
+                <div className="relative">
+                  <input
+                    type={viewPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    className="w-full p-3 pr-12 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition"
+                  />
+                  <div
+                    onClick={() => setViewPassword(!viewPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 hover:text-white"
+                  >
+                    {viewPassword ? <HiEyeSlash className="text-xl" /> : <HiMiniEye className="text-xl" />}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* ROLE */}
-            <div className="mb-6">
-              <label className="text-gray-300 text-lg">Role</label>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full mt-2 p-3 bg-gray-900 border border-gray-700 rounded-xl 
-                text-white focus:outline-none focus:ring-2 focus:ring-red-600"
+              {/* ROLE */}
+              <div className="mb-6">
+                <label className="text-gray-300 text-lg block mb-1">Account Type</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition"
+                >
+                  <option value="startup">Startup Founder</option>
+                  <option value="investor">Investor</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 transition-all py-3 rounded-xl text-white font-bold text-xl shadow-[0_0_20px_rgba(255,0,0,0.5)] cursor-pointer"
               >
-                <option value="startup">Startup</option>
-                <option value="investor">Investor</option>
-              </select>
+                {loading ? "CREATING ACCOUNT..." : "REGISTER"}
+              </button>
+            </form>
+
+            <div className="flex items-center my-4">
+              <div className="flex-grow border-t border-gray-700"></div>
+              <span className="px-3 text-gray-400 text-sm">OR</span>
+              <div className="flex-grow border-t border-gray-700"></div>
             </div>
 
-            <button
-              onClick={handleRegister}
-              className="w-full bg-red-600 hover:bg-red-700 transition-all py-3 rounded-xl 
-              text-white font-bold text-xl shadow-[0_0_20px_rgba(255,0,0,0.5)]"
-            >
-              REGISTER
-            </button>
-
-            {/* GOOGLE LOGIN BUTTON */}
-            <div className="mt-6 flex justify-center">
+            {/* GOOGLE SIGNUP BUTTON */}
+            <div className="flex justify-center my-4">
               <GoogleLogin
                 text="signup_with"
                 onSuccess={handleGoogleSignup}
@@ -191,42 +214,49 @@ export function Register() {
               />
             </div>
 
-          </motionRegister.div>
+            <div className="text-center mt-6 text-gray-400 text-base">
+              Already have an account?{" "}
+              <Link to="/login" className="text-red-500 hover:text-red-400 font-semibold underline underline-offset-4">
+                Log in
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </div>
 
-      {/* 🔥 ROLE SELECTION OVERLAY OUTSIDE BACKGROUND WRAPPER */}
+      {/* ROLE SELECTION MODAL FOR GOOGLE SIGNUP */}
       {showRoleSelect && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm 
-        flex justify-center items-center z-50">
-
-          <div className="bg-[#1a1a1a] p-8 rounded-2xl border border-red-600 w-80 
-          shadow-[0_0_40px_rgba(255,0,0,0.6)] scale-100">
-
-            <h2 className="text-2xl text-center text-red-500 mb-6">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex justify-center items-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-[#1a1a1a] p-8 rounded-2xl border border-red-600 w-full max-w-sm shadow-[0_0_40px_rgba(255,0,0,0.6)]"
+          >
+            <h2 className="text-2xl text-center text-red-500 mb-2 font-bold">
               Select Your Role
             </h2>
+            <p className="text-gray-400 text-center text-sm mb-6">
+              Choose how you will be using InvestMatch
+            </p>
 
             <button
               onClick={() => handleRoleSelect("investor")}
-              className="w-full py-3 mt-3 bg-red-600 hover:bg-red-700 
-              text-white rounded-xl font-bold"
+              disabled={loading}
+              className="w-full py-3 mb-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-xl font-bold cursor-pointer transition shadow-lg"
             >
               Investor
             </button>
 
             <button
               onClick={() => handleRoleSelect("startup")}
-              className="w-full py-3 mt-3 bg-red-600 hover:bg-red-700 
-              text-white rounded-xl font-bold"
+              disabled={loading}
+              className="w-full py-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white border border-gray-600 rounded-xl font-bold cursor-pointer transition shadow-lg"
             >
-              Startup
+              Startup Founder
             </button>
-
-          </div>
+          </motion.div>
         </div>
       )}
     </>
   );
-
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../utils/api";
+import api, { SOCKET_URL } from "../../utils/api";
 import Navbar from "../Navbar";
 import io from "socket.io-client";
 import { jwtDecode } from "jwt-decode";
@@ -13,8 +13,7 @@ export default function InvestorRequests() {
   //SOCKET LOGIC
   useEffect(() => {
     // 1. Connect
-    // const socket = io("http://localhost:5000"); // Use your backend URL
-    const socket = io("https://investormatch-backend-yn2k.onrender.com");
+    const socket = io(SOCKET_URL);
 
     // Use your backend URL
     // 2. Get User ID from token

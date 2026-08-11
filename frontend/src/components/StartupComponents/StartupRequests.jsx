@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import api from "../../utils/api.js";
+import api, { SOCKET_URL } from "../../utils/api.js";
 import toast from "react-hot-toast";
 import Navbar from "../Navbar.jsx";
 import { useNavigate } from "react-router-dom";
@@ -13,8 +12,7 @@ export default function StartupRequests() {
   //SOCKET LOGIC
   useEffect(() => {
     // 1. Connect
-    // const socket = io("http://localhost:5000");
-    const socket = io("https://investormatch-backend-yn2k.onrender.com");
+    const socket = io(SOCKET_URL);
 
     // Use your backend URL
     // 2. Get User ID from token

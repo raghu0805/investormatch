@@ -1,5 +1,6 @@
 import Startup from '../models/StartupProfile.js';
 import Investor from '../models/InvestorProfile.js';
+import Request from '../models/Request.js';
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 import { generateEmbedding } from "../utils/generateEmbeddings.js";
 
@@ -262,7 +263,7 @@ const getStartupProfileById = async (req, res) => {
     const profile = await Startup.findOne({ userId });
 
     if (!profile) {
-      return res.status(404).json({ message: "Investor profile not found" });
+      return res.status(404).json({ success: false, message: "Startup profile not found" });
     }
 
     return res.status(200).json({ success: true, profile });

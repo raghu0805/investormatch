@@ -1,16 +1,51 @@
 import axios from 'axios';
 
-// const api = axios.create({
-//     baseURL: "http://localhost:5000/api"
-// });
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+export const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || API_BASE_URL.replace(/\/api\/?$/, "");
+
 const api = axios.create({
-    baseURL: "https://investormatch-backend-yn2k.onrender.com/api"
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json"
+  }
 });
 
-api.interceptors.request.use((config) => {
+// Request Interceptor: Attach Auth Token
+api.interceptors.request.use(
+  (config) => {
     const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
-})
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Catch Expired/Invalid Tokens
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error.response?.status;
+    const errorCode = error.response?.data?.code;
+
+    if (status === 401 || (status === 403 && errorCode === "INVALID_TOKEN")) {
+      // If token expired or invalid, clear cached authentication
+      if (errorCode === "TOKEN_EXPIRED" || errorCode === "INVALID_TOKEN") {
+        console.warn("Session expired or invalid token. Clearing local auth state.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("userId");
+
+        // If not already on public routes, redirect to login
+        const currentPath = window.location.pathname;
+        if (currentPath !== "/login" && currentPath !== "/signup" && currentPath !== "/") {
+          window.location.href = "/login";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
