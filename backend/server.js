@@ -45,6 +45,10 @@ const corsOptions = {
 
 // Middlewares
 app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
@@ -55,6 +59,7 @@ app.use("/api/startup", studentRoutes); // Fallback alias for legacy requests
 app.use("/api/investor", investorRoutes);
 app.use("/api/request", requestRoutes);
 app.use("/api/news", newsRoutes);
+
 
 app.get("/api", (req, res) => {
   res.json({ success: true, message: "InvestMatch API is running" });
