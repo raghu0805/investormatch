@@ -1,4 +1,3 @@
-
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
@@ -7,7 +6,6 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center px-6">
-
       {/* Floating red glow */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -43,11 +41,10 @@ export default function NotFound() {
         transition={{ delay: 0.9, duration: 0.7 }}
         onClick={() => navigate("/")}
         className="mt-8 bg-red-600 hover:bg-red-700 px-8 py-3 rounded-xl font-semibold text-white 
-                   transition transform hover:scale-105 shadow-xl shadow-red-900/40 z-10"
+                   transition transform hover:scale-105 shadow-xl shadow-red-900/40 z-10 cursor-pointer"
       >
         Go Back Home
       </motion.button>
-
     </div>
   );
 }

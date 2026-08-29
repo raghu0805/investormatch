@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const startupSchema = new mongoose.Schema(
+const studentSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -9,9 +9,10 @@ const startupSchema = new mongoose.Schema(
       required: true,
     },
 
-    startupName: { type: String, required: true },
+    studentName: { type: String },
+    startupName: { type: String }, // Backwards compatibility & alias
 
-    founderName: { type: String, required: true },
+    founderName: { type: String },
 
     industry: { type: String, required: true },
 
@@ -36,23 +37,22 @@ const startupSchema = new mongoose.Schema(
     fundingNeeded: { type: Number, required: true },
 
     // 🔑 Embedding field
-  embedding: {
-  type: [Number],
-  default: []
-},
-embeddingStatus: {
-  type: String,
-  enum: ["pending", "completed"],
-  default: "pending"
-}
-
+    embedding: {
+      type: [Number],
+      default: []
+    },
+    embeddingStatus: {
+      type: String,
+      enum: ["pending", "completed"],
+      default: "pending"
+    }
   },
   { timestamps: true }
 );
 
-const StartupProfile = mongoose.model(
-  "StartupProfile",
-  startupSchema
+const StudentProfile = mongoose.model(
+  "StudentProfile",
+  studentSchema
 );
 
-export default StartupProfile;
+export default StudentProfile;

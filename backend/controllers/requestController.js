@@ -1,132 +1,130 @@
 import Request from '../models/Request.js';
-import Investor from "../models/InvestorProfile.js"
-import Startup from "../models/StartupProfile.js"
+import Investor from "../models/InvestorProfile.js";
+import Student from "../models/StudentProfile.js";
 import { generateRoomId } from "../utils/createRoom.js";
 
-
-const sendStartupRequest = async (req, res) => {
+const sendStudentRequest = async (req, res) => {
   try {
-    // Convert logged-in user → StartupProfile ID
-    const startup = await Startup.findOne({ userId: req.userId });
+    // Convert logged-in user → StudentProfile ID
+    const student = await Student.findOne({ userId: req.userId });
 
-    if (!startup) {
-      return res.status(404).json({ message: "Startup profile not found" });
+    if (!student) {
+      return res.status(404).json({ message: "Student profile not found" });
     }
 
-    const startupId = startup._id;   // ✔ correct
+    const studentId = student._id;
 
     const { investorId } = req.body;
 
-    if (!investorId || !startupId) {
+    if (!investorId || !studentId) {
       return res.status(400).json({ message: "Missing data" });
     }
 
-    const requestExist = await Request.findOne({ investorId, startupId });
+    const requestExist = await Request.findOne({
+      investorId,
+      $or: [{ studentId }, { startupId: studentId }]
+    });
 
     if (requestExist) {
       return res.status(400).json({ message: "Request already exists" });
     }
 
-    const roomId = generateRoomId(startupId, investorId);
+    const roomId = generateRoomId(studentId, investorId);
 
-    // Create request with correct startupId
+    // Create request with correct studentId and startupId
     const created = await Request.create({
       investorId,
-      startupId,
+      studentId,
+      startupId: studentId,
       roomId,
-      senderRole: "startup"
+      senderRole: "student"
     });
 
     return res.status(201).json({ message: "Request created", data: created });
 
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 };
-
-
-
-
 
 const sendInvestorRequest = async (req, res) => {
   try {
-    // Convert logged-in user → InvestorProfile ID
-    const investor = await Investor.findOne({ userId: req.userId });
-
-    if (!investor) {
-      return res.status(404).json({ message: "Startup profile not found" });
-    }
-
-    const investorId = investor._id;   // ✔ correct
-
-    const { startupId } = req.body;
-
-    if (!investorId || !startupId) {
-      return res.status(400).json({ message: "Missing data" });
-    }
-
-    const requestExist = await Request.findOne({ investorId, startupId });
-
-    if (requestExist) {
-      return res.status(400).json({ message: "Request already exists" });
-    }
-
-    const roomId = generateRoomId(startupId, investorId);
-    // Create request with correct startupId
-    const created = await Request.create({
-      investorId,
-      startupId,
-      roomId,
-      senderRole: "investor"
-    });
-    return res.status(201).json({ message: "Request created", data: created });
-  } catch (err) {
-    console.log(err);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
-const getSentRequests = async (req, res) => {
-  try {
-    // 1️⃣ Find the startup profile using logged-in userId
-    const startup = await Startup.findOne({ userId: req.userId });
-
-    if (!startup) {
-      return res.status(404).json({ message: "Startup profile not found" });
-    }
-
-    const startupId = startup._id;
-    // console.log("startup id from getSentRequest:", startupId.toString());
-
-    // 2️⃣ Use StartupProfile._id in the query
-    const sent = await Request.find({ startupId, senderRole: "startup" }).populate("investorId");
-
-    // console.log("sent requests:", sent);
-
-    return res
-      .status(200)
-      .json({ message: "The sent requests fetched", data: sent });
-  } catch (err) {
-    console.error("Error in getSentRequests:", err);
-    return res.status(500).json({ message: "Server Error" });
-  }
-};
-const getReceivedRequests = async (req, res) => {
-  try {
-    // Step 1: Get InvestorProfile from logged-in userId
     const investor = await Investor.findOne({ userId: req.userId });
 
     if (!investor) {
       return res.status(404).json({ message: "Investor profile not found" });
     }
 
-    // console.log("Correct investorId:", investor._id);
+    const investorId = investor._id;
 
-    // Step 2: Use investor._id to fetch requests
-    const received = await Request.find({ investorId: investor._id, senderRole: "startup" })
+    const { studentId, startupId } = req.body;
+    const targetStudentId = studentId || startupId;
+
+    if (!investorId || !targetStudentId) {
+      return res.status(400).json({ message: "Missing data" });
+    }
+
+    const requestExist = await Request.findOne({
+      investorId,
+      $or: [{ studentId: targetStudentId }, { startupId: targetStudentId }]
+    });
+
+    if (requestExist) {
+      return res.status(400).json({ message: "Request already exists" });
+    }
+
+    const roomId = generateRoomId(targetStudentId, investorId);
+    const created = await Request.create({
+      investorId,
+      studentId: targetStudentId,
+      startupId: targetStudentId,
+      roomId,
+      senderRole: "investor"
+    });
+    return res.status(201).json({ message: "Request created", data: created });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+const getSentRequests = async (req, res) => {
+  try {
+    const student = await Student.findOne({ userId: req.userId });
+
+    if (!student) {
+      return res.status(404).json({ message: "Student profile not found" });
+    }
+
+    const studentId = student._id;
+
+    const sent = await Request.find({
+      $or: [{ studentId }, { startupId: studentId }],
+      senderRole: { $in: ["student", "startup"] }
+    }).populate("investorId");
+
+    return res.status(200).json({ message: "Sent requests fetched", data: sent });
+  } catch (err) {
+    console.error("Error in getSentRequests:", err);
+    return res.status(500).json({ message: "Server Error" });
+  }
+};
+
+const getReceivedRequests = async (req, res) => {
+  try {
+    const investor = await Investor.findOne({ userId: req.userId });
+
+    if (!investor) {
+      return res.status(404).json({ message: "Investor profile not found" });
+    }
+
+    const received = await Request.find({
+      investorId: investor._id,
+      senderRole: { $in: ["student", "startup"] }
+    })
+      .populate("studentId")
       .populate("startupId");
-
-    // console.log("details:", received);
 
     return res.status(200).json({
       message: "Received requests fetched",
@@ -139,17 +137,13 @@ const getReceivedRequests = async (req, res) => {
   }
 };
 
-
-
 const updateRequestStatus = async (req, res) => {
   try {
     const { requestId, status } = req.body;
-    // 1. Get IO instance
-    const io = req.app.get("io");
     if (!["accepted", "rejected"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
-    // 2. Find and update the request
+
     const updated = await Request.findByIdAndUpdate(
       requestId,
       { status },
@@ -158,65 +152,49 @@ const updateRequestStatus = async (req, res) => {
     if (!updated) {
       return res.status(404).json({ message: "Request not found" });
     }
-    // 3. Notify the OTHER party
-    // The 'updated' object contains investorId and startupId (Profile IDs)
-    // We need to find the User ID of the party who SHOULD RECEIVE the notification.
 
-    // Logic: If the current user is the Startup, notify the Investor.
-    // If the current user is the Investor, notify the Startup.
-    // Since we don't easily know who "sent" the action here without querying, 
-    // we can simply emit to BOTH parties or check the current user.
-
-    // Robust approach: Fetch both profiles to get their UserIDs
-    const startupProfile = await Startup.findById(updated.startupId);
-    const investorProfile = await Investor.findById(updated.investorId);
-    if (startupProfile && startupProfile.userId) {
-      io.to(startupProfile.userId.toString()).emit("request-status-updated", updated);
-    }
-
-    if (investorProfile && investorProfile.userId) {
-      io.to(investorProfile.userId.toString()).emit("request-status-updated", updated);
-    }
     return res.status(200).json({ message: "Request updated", data: updated });
   } catch (err) {
-    console.log(err);
+    console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 const checkingAlreadySent = async (req, res) => {
   try {
-    const startupId = req.userId;
+    const studentId = req.userId;
     const investorId = req.query.investorId;
-    const requestExist = await Request.findOne({ investorId, startupId });
+    const requestExist = await Request.findOne({
+      investorId,
+      $or: [{ studentId }, { startupId: studentId }]
+    });
     if (requestExist) {
-      return res.status(400).json({ message: "The request is already sent" })
+      return res.status(400).json({ message: "The request is already sent" });
     }
     return res.status(200).json({ message: "The request is not sent" });
-  }
-  catch (err) {
+  } catch (err) {
     return res.status(500).json({ message: "Server error" });
   }
-}
+};
 
-//it is for sending request from investor to stattup
 const checkingInvestorAlreadySent = async (req, res) => {
   try {
     const investorId = req.userId;
-    const startupId = req.query.startupId;
-    const requestExist = await Request.findOne({ investorId, startupId });
+    const targetStudentId = req.query.studentId || req.query.startupId;
+    const requestExist = await Request.findOne({
+      investorId,
+      $or: [{ studentId: targetStudentId }, { startupId: targetStudentId }]
+    });
     if (requestExist) {
-      return res.status(400).json({ message: "The request is already sent" })
+      return res.status(400).json({ message: "The request is already sent" });
     }
     return res.status(200).json({ message: "The request is not sent" });
-  
+
   } catch (err) {
-  return res.status(500).json({ message: "Server error" });
-}
-}
+    return res.status(500).json({ message: "Server error" });
+  }
+};
 
-// ---------------------- NEW: BIDIRECTIONAL LOGIC ----------------------
-
-// 1. Investor checks what they SENT
 const getInvestorSentRequests = async (req, res) => {
   try {
     const investor = await Investor.findOne({ userId: req.userId });
@@ -225,7 +203,7 @@ const getInvestorSentRequests = async (req, res) => {
     const sent = await Request.find({
       investorId: investor._id,
       senderRole: "investor"
-    }).populate("startupId");
+    }).populate("studentId").populate("startupId");
 
     return res.status(200).json({ data: sent });
   } catch (err) {
@@ -234,14 +212,13 @@ const getInvestorSentRequests = async (req, res) => {
   }
 };
 
-// 2. Startup checks what they RECEIVED
-const getStartupReceivedRequests = async (req, res) => {
+const getStudentReceivedRequests = async (req, res) => {
   try {
-    const startup = await Startup.findOne({ userId: req.userId });
-    if (!startup) return res.status(404).json({ message: "Startup not found" });
+    const student = await Student.findOne({ userId: req.userId });
+    if (!student) return res.status(404).json({ message: "Student not found" });
 
     const received = await Request.find({
-      startupId: startup._id,
+      $or: [{ studentId: student._id }, { startupId: student._id }],
       senderRole: "investor"
     }).populate("investorId");
 
@@ -251,8 +228,10 @@ const getStartupReceivedRequests = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 export {
-  sendStartupRequest,
+  sendStudentRequest,
+  sendStudentRequest as sendStartupRequest,
   sendInvestorRequest,
   getSentRequests,
   getReceivedRequests,
@@ -260,5 +239,6 @@ export {
   checkingAlreadySent,
   checkingInvestorAlreadySent,
   getInvestorSentRequests,
-  getStartupReceivedRequests
+  getStudentReceivedRequests,
+  getStudentReceivedRequests as getStartupReceivedRequests
 };

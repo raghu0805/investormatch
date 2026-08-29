@@ -25,7 +25,7 @@ const userSchema = new mongoose.Schema({
 
   role: {
     type: String,
-    enum: ["startup", "investor"],
+    enum: ["student", "startup", "investor"],
     required: true,
   },
 

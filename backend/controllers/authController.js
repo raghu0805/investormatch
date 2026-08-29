@@ -30,8 +30,8 @@ const signup = async (req, res) => {
       return res.status(400).json({ success: false, error: "Email, password, and role are required" });
     }
 
-    if (!["startup", "investor"].includes(role)) {
-      return res.status(400).json({ success: false, error: "Role must be either 'startup' or 'investor'" });
+    if (!["student", "startup", "investor"].includes(role)) {
+      return res.status(400).json({ success: false, error: "Role must be either 'student' or 'investor'" });
     }
 
     // Email normalization

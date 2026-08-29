@@ -1,10 +1,10 @@
 import { useContext, useState } from "react";
 import { motion } from "framer-motion";
-import api from "../utils/api";
+import api from "../../utils/api";
 import { useNavigate, Link } from "react-router-dom";
 import { HiMiniEye, HiEyeSlash } from "react-icons/hi2";
 import toast from "react-hot-toast";
-import { AuthContext } from "../context/DataContext";
+import { AuthContext } from "../../context/DataContext";
 import { GoogleLogin } from "@react-oauth/google";
 import { jwtDecode } from "jwt-decode";
 
@@ -36,7 +36,7 @@ export default function Login() {
       if (role === "investor") {
         navigate("/investor/dashboard");
       } else {
-        navigate("/startup/dashboard");
+        navigate("/student/dashboard");
       }
 
     } catch (err) {
@@ -72,7 +72,7 @@ export default function Login() {
       if (role === "investor") {
         navigate("/investor/dashboard");
       } else {
-        navigate("/startup/dashboard");
+        navigate("/student/dashboard");
       }
 
     } catch (err) {

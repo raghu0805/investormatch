@@ -2,16 +2,12 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import http from 'http';
-import { Server } from 'socket.io';
 import connectDB from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
-import startupRoutes from './routes/startupRoutes.js';
+import studentRoutes from './routes/studentRoutes.js';
 import investorRoutes from './routes/investorRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
-import messageRoutes from './routes/messageRoutes.js';
-import chatRoutes from './routes/chatRoutes.js';
 import newsRoutes from './routes/newsRoutes.js';
-import SocketHandler from './socket/socketHandler.js';
 
 dotenv.config();
 connectDB();
@@ -47,14 +43,6 @@ const corsOptions = {
   credentials: true
 };
 
-const io = new Server(server, {
-  cors: corsOptions
-});
-
-// Make accessible to global
-app.set("io", io);
-SocketHandler(io);
-
 // Middlewares
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -62,11 +50,10 @@ app.use("/uploads", express.static("uploads"));
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/startup", startupRoutes);
+app.use("/api/student", studentRoutes);
+app.use("/api/startup", studentRoutes); // Fallback alias for legacy requests
 app.use("/api/investor", investorRoutes);
 app.use("/api/request", requestRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/chat", chatRoutes);
 app.use("/api/news", newsRoutes);
 
 app.get("/api", (req, res) => {

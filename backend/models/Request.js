@@ -1,10 +1,14 @@
 import mongoose from "mongoose";
+
 const requestSchema = new mongoose.Schema(
   {
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "StudentProfile",
+    },
     startupId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "StartupProfile",
-      required: true,
+      ref: "StudentProfile",
     },
     investorId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -20,7 +24,7 @@ const requestSchema = new mongoose.Schema(
 
     senderRole: {
       type: String,
-      enum: ["startup", "investor"],
+      enum: ["student", "startup", "investor"],
       required: true
     },
 
@@ -40,5 +44,16 @@ const requestSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Pre-save hook to ensure studentId/startupId sync
+requestSchema.pre("save", function(next) {
+  if (this.studentId && !this.startupId) {
+    this.startupId = this.studentId;
+  } else if (this.startupId && !this.studentId) {
+    this.studentId = this.startupId;
+  }
+  next();
+});
+
 const Request = mongoose.model("Request", requestSchema);
 export default Request;

@@ -1,11 +1,11 @@
 import { useContext } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { AuthContext } from "../context/DataContext";
+import { AuthContext } from "../../context/DataContext";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
-  const role=localStorage.getItem("role")
+  const role = localStorage.getItem("role");
 
   const handleLogout = () => {
     logout();
@@ -50,7 +50,7 @@ export default function Navbar() {
 
         <button
           onClick={handleLogout}
-          className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white font-semibold transition"
+          className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-white font-semibold transition cursor-pointer"
         >
           Logout
         </button>

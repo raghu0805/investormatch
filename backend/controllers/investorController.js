@@ -1,11 +1,11 @@
 import Investor from '../models/InvestorProfile.js';
-import StartupProfile from '../models/StartupProfile.js';
+import StudentProfile from '../models/StudentProfile.js';
 import Request from '../models/Request.js';
 import { cosineSimilarity } from '../utils/cosineSimilarity.js';
 import { generateEmbedding } from "../utils/generateEmbeddings.js";
 
 
-const matchStartup = async (req, res) => {
+const matchStudents = async (req, res) => {
   try {
     const userId = req.userId;
 
@@ -17,49 +17,51 @@ const matchStartup = async (req, res) => {
 
     if (!investor) {
       return res.status(400).json({
-        message: "Startup embedding not ready"
+        message: "Investor profile or embedding not ready"
       });
     }
 
-    // 2️⃣ Fetch eligible investors
-    const startup = await StartupProfile.find({
+    // 2️⃣ Fetch eligible students
+    const students = await StudentProfile.find({
       embeddingStatus: "completed",
-      // minimumInvestment: { $lte: startup.fundingNeeded },
-      // maximumInvestment: { $gte: startup.fundingNeeded }
     });
 
-    // 3️⃣ FETCH ALL REQUESTS involving this investor (Sent OR Received)
+    // 3️⃣ FETCH ALL REQUESTS involving this investor
     const allRequests = await Request.find({ investorId: investor._id });
 
-    // Create a Map: startupId -> { status, requestId }
+    // Map studentId -> { status, requestId }
     const requestStatusMap = new Map();
     allRequests.forEach(req => {
-      requestStatusMap.set(req.startupId.toString(), { status: req.status, requestId: req._id });
+      const id = (req.studentId || req.startupId)?.toString();
+      if (id) {
+        requestStatusMap.set(id, { status: req.status, requestId: req._id });
+      }
     });
 
-    // 4️⃣ Rank using cosine similarity AND add request status
-    const rankedstartup = startup.map(stp => {
-      const requestInfo = requestStatusMap.get(stp._id.toString());
+    // 4️⃣ Rank using cosine similarity
+    const rankedStudents = students.map(std => {
+      const requestInfo = requestStatusMap.get(std._id.toString());
       return {
-        ...stp.toObject(),
-        similarity: cosineSimilarity(stp.embedding, investor.embedding),
+        ...std.toObject(),
+        similarity: cosineSimilarity(std.embedding, investor.embedding),
         requestStatus: requestInfo ? requestInfo.status : null,
         requestId: requestInfo ? requestInfo.requestId : null
       }
     });
 
     // 5️⃣ Sort DESC
-    rankedstartup.sort((a, b) => b.similarity - a.similarity);
+    rankedStudents.sort((a, b) => b.similarity - a.similarity);
     // 6️⃣ Return top N (3)
     return res.status(200).json({
       investorId: investor.userId,
-      matches: rankedstartup.slice(0, 3)
+      matches: rankedStudents.slice(0, 3)
     });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 
@@ -250,5 +252,5 @@ const getInvestorProfileById = async (req, res) => {
 };
 
 export {
-  createInvestorProfile, getMyInvestorProfile, updateInvestorProfile, getInvestorProfileById, matchStartup
+  createInvestorProfile, getMyInvestorProfile, updateInvestorProfile, getInvestorProfileById, matchStudents, matchStudents as matchStartup
 };

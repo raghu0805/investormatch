@@ -1,4 +1,4 @@
-import Startup from '../models/StartupProfile.js';
+import Student from '../models/StudentProfile.js';
 import Investor from '../models/InvestorProfile.js';
 import Request from '../models/Request.js';
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
@@ -8,30 +8,29 @@ const matchInvestors = async (req, res) => {
   try {
     const userId = req.userId;
 
-    // 1️⃣ Get startup with embedding
-    const startup = await Startup.findOne({
+    // 1️⃣ Get student with embedding
+    const student = await Student.findOne({
       userId,
       embeddingStatus: "completed"
     });
 
-    if (!startup) {
+    if (!student) {
       return res.status(400).json({
-        message: "Startup embedding not ready"
+        message: "Student embedding not ready"
       });
     }
 
     // 2️⃣ Fetch eligible investors
     const investors = await Investor.find({
       embeddingStatus: "completed",
-      minimumInvestment: { $lte: startup.fundingNeeded },
-      maximumInvestment: { $gte: startup.fundingNeeded }
+      minimumInvestment: { $lte: student.fundingNeeded },
+      maximumInvestment: { $gte: student.fundingNeeded }
     });
 
     // 3️⃣ Rank using cosine similarity
-    // 3️⃣ Rank using cosine similarity
-
-    // FETCH ALL REQUESTS involving this startup
-    const allRequests = await Request.find({ startupId: startup._id });
+    const allRequests = await Request.find({
+      $or: [{ studentId: student._id }, { startupId: student._id }]
+    });
     const requestStatusMap = new Map();
     allRequests.forEach(req => {
       requestStatusMap.set(req.investorId.toString(), { status: req.status, requestId: req._id });
@@ -41,7 +40,7 @@ const matchInvestors = async (req, res) => {
       const requestInfo = requestStatusMap.get(inv._id.toString());
       return {
         ...inv.toObject(),
-        similarity: cosineSimilarity(startup.embedding, inv.embedding),
+        similarity: cosineSimilarity(student.embedding, inv.embedding),
         requestStatus: requestInfo ? requestInfo.status : null,
         requestId: requestInfo ? requestInfo.requestId : null
       }
@@ -52,7 +51,8 @@ const matchInvestors = async (req, res) => {
 
     // 5️⃣ Return top N (3)
     return res.status(200).json({
-      startupId: startup._id,
+      studentId: student._id,
+      startupId: student._id,
       matches: rankedInvestors.slice(0, 3)
     });
 
@@ -62,23 +62,24 @@ const matchInvestors = async (req, res) => {
   }
 };
 
-export default matchInvestors;
-function buildStartupEmbeddingText(startup) {
+function buildStudentEmbeddingText(student) {
   return `
-Industry: ${startup.industry}
-Stage: ${startup.stage}
-Problem: ${startup.problemStatement}
-Solution: ${startup.solution}
-Description: ${startup.description || ""}
-Location: ${startup.location}
+Name / Project: ${student.studentName || student.startupName || ""}
+Industry: ${student.industry}
+Stage: ${student.stage}
+Problem: ${student.problemStatement}
+Solution: ${student.solution}
+Description: ${student.description || ""}
+Location: ${student.location}
 `.trim();
 }
 
-const createStartupProfile = async (req, res) => {
+const createStudentProfile = async (req, res) => {
   try {
     const userId = req.userId;
 
     const {
+      studentName,
       startupName,
       founderName,
       industry,
@@ -92,27 +93,30 @@ const createStartupProfile = async (req, res) => {
       location
     } = req.body;
 
+    const displayName = studentName || startupName;
+
     // required fields validation
-    if (!startupName || !founderName || !industry || !problemStatement || !solution || !stage || !fundingNeeded || !location) {
+    if (!displayName || !founderName || !industry || !problemStatement || !solution || !stage || !fundingNeeded || !location) {
       return res.status(400).json({ error: "All required fields must be provided." });
     }
 
     // stage validation
     const allowedStages = ["idea", "prototype", "MVP", "Scale"];
     if (!allowedStages.includes(stage)) {
-      return res.status(400).json({ error: "Startup stage is not allowed/invalid!" });
+      return res.status(400).json({ error: "Student project stage is not allowed/invalid!" });
     }
 
     // check if profile already exists
-    const existingProfile = await Startup.findOne({ userId });
+    const existingProfile = await Student.findOne({ userId });
     if (existingProfile) {
-      return res.status(400).json({ error: "Startup profile already exists" });
+      return res.status(400).json({ error: "Student profile already exists" });
     }
 
     // 1️⃣ Create profile FIRST
-    const newStartupProfile = await Startup.create({
+    const newStudentProfile = await Student.create({
       userId,
-      startupName,
+      studentName: displayName,
+      startupName: displayName,
       founderName,
       industry,
       problemStatement,
@@ -128,21 +132,20 @@ const createStartupProfile = async (req, res) => {
 
     // 2️⃣ Generate embedding (NON-BLOCKING LOGIC)
     try {
-      const text = buildStartupEmbeddingText(newStartupProfile);
+      const text = buildStudentEmbeddingText(newStudentProfile);
       const embedding = await generateEmbedding(text);
 
-      newStartupProfile.embedding = embedding;
-      newStartupProfile.embeddingStatus = "completed";
-      await newStartupProfile.save();
+      newStudentProfile.embedding = embedding;
+      newStudentProfile.embeddingStatus = "completed";
+      await newStudentProfile.save();
 
     } catch (embeddingError) {
       console.error("Embedding generation failed:", embeddingError);
-      // profile still exists – safe fallback
     }
 
     return res.status(201).json({
-      message: "Startup profile created successfully",
-      profile: newStartupProfile
+      message: "Student profile created successfully",
+      profile: newStudentProfile
     });
 
   } catch (err) {
@@ -156,10 +159,7 @@ const createStartupProfile = async (req, res) => {
   }
 };
 
-
-
-
-const getMyStartupProfile = async (req, res) => {
+const getMyStudentProfile = async (req, res) => {
   try {
     const userId = req.userId;
 
@@ -167,34 +167,33 @@ const getMyStartupProfile = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const profile = await Startup.findOne({ userId });
+    const profile = await Student.findOne({ userId });
 
     if (!profile) {
-      return res.status(404).json({ error: "Startup profile doesn't exist" });
+      return res.status(404).json({ error: "Student profile doesn't exist" });
     }
 
     return res.status(200).json({
       success: true,
-      message: "Startup profile fetched successfully",
+      message: "Student profile fetched successfully",
       profile
     });
 
   } catch (err) {
-    console.error("Error fetching startup profile:", err);
+    console.error("Error fetching student profile:", err);
     return res.status(500).json({ error: "Server Error" });
   }
 };
 
-const updateStartupProfile = async (req, res) => {
+const updateStudentProfile = async (req, res) => {
   try {
-
-
     const userId = req.userId;
-    const profile = await Startup.findOne({ userId });
+    const profile = await Student.findOne({ userId });
     if (!profile) {
       return res.status(404).json({ error: "The profile not found" });
     }
     const allowed = [
+      "studentName",
       "startupName",
       "founderName",
       "industry",
@@ -211,59 +210,30 @@ const updateStartupProfile = async (req, res) => {
       if (req.body[field] !== undefined) {
         profile[field] = req.body[field];
       }
-    })
+    });
+
+    if (req.body.studentName && !profile.startupName) {
+      profile.startupName = req.body.studentName;
+    } else if (req.body.startupName && !profile.studentName) {
+      profile.studentName = req.body.startupName;
+    }
+
     await profile.save();
 
-    return res.status(201).json({ message: "profile updated successfully", profile });
+    return res.status(200).json({ message: "Profile updated successfully", profile });
   } catch (err) {
     return res.status(500).json({ error: "Server error" });
   }
-}
-
-
-
-
-
-
-const calculateScore = (investor, startup) => {
-  let score = 0;
-
-
-  if (investor.location.toLowerCase() === startup.location.toLowerCase()) {
-    score += 20;
-  }
-
-
-  if (investor.preferredIndustries.includes(startup.industry)) {
-    score += 40;
-  }
-
-
-  if (
-    investor.minimumInvestment <= startup.fundingNeeded &&
-    investor.maximumInvestment >= startup.fundingNeeded
-  ) {
-    score += 30;
-  }
-
-
-  if (
-    investor.investmentInterest &&
-    investor.investmentInterest.toLowerCase().includes(startup.stage.toLowerCase())
-  ) {
-    score += 10;
-  }
-
-  return score;
 };
-const getStartupProfileById = async (req, res) => {
+
+const getStudentProfileById = async (req, res) => {
   try {
     const { userId } = req.params;
 
-    const profile = await Startup.findOne({ userId });
+    const profile = await Student.findOne({ userId });
 
     if (!profile) {
-      return res.status(404).json({ success: false, message: "Startup profile not found" });
+      return res.status(404).json({ success: false, message: "Student profile not found" });
     }
 
     return res.status(200).json({ success: true, profile });
@@ -273,4 +243,10 @@ const getStartupProfileById = async (req, res) => {
   }
 };
 
-export { createStartupProfile, getMyStartupProfile, updateStartupProfile, matchInvestors, getStartupProfileById };
+export {
+  createStudentProfile,
+  getMyStudentProfile,
+  updateStudentProfile,
+  matchInvestors,
+  getStudentProfileById
+};

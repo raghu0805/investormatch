@@ -11,7 +11,7 @@ import ollama from "ollama";
 import { exec } from "child_process";
 import util from "util";
 
-import StartupProfile from "../models/StartupProfile.js";
+import StudentProfile from "../models/StudentProfile.js";
 import InvestorProfile from "../models/InvestorProfile.js";
 
 dotenv.config();
@@ -68,7 +68,7 @@ async function generateEmbedding(text) {
 /* -------------------------------------------------
    📝 TEXT BUILDERS
 --------------------------------------------------*/
-function buildStartupText(s) {
+function buildStudentText(s) {
   return `
 Industry: ${s.industry}
 Stage: ${s.stage}
@@ -94,20 +94,20 @@ Location: ${i.location}
    🔁 MAIN JOB
 --------------------------------------------------*/
 async function runEmbeddingJob() {
-  // ---------- STARTUPS ----------
-  const startups = await StartupProfile.find({
+  // ---------- STUDENTS ----------
+  const students = await StudentProfile.find({
     embeddingStatus: "pending"
   });
 
-  console.log(`🟢 Startups pending: ${startups.length}`);
+  console.log(`🟢 Students pending: ${students.length}`);
 
-  for (const s of startups) {
-    const embedding = await generateEmbedding(buildStartupText(s));
+  for (const s of students) {
+    const embedding = await generateEmbedding(buildStudentText(s));
     s.embedding = embedding;
     s.embeddingStatus = "completed";
     await s.save();
 
-    console.log(`✅ Embedded Startup: ${s.startupName}`);
+    console.log(`✅ Embedded Student: ${s.studentName || s.startupName}`);
   }
 
   // ---------- INVESTORS ----------

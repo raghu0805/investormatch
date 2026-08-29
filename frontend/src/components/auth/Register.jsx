@@ -1,20 +1,20 @@
 import { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, Link } from "react-router-dom";
-import api from "../utils/api";
+import api from "../../utils/api";
 import { jwtDecode } from "jwt-decode";
 import { HiMiniEye, HiEyeSlash } from "react-icons/hi2";
 import toast from "react-hot-toast";
 import { GoogleLogin } from "@react-oauth/google";
 import axios from "axios";
-import { AuthContext } from "../context/DataContext";
+import { AuthContext } from "../../context/DataContext";
 
 export function Register() {
   const [viewPassword, setViewPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("startup");
+  const [role, setRole] = useState("student");
   const [loading, setLoading] = useState(false);
   const [googleData, setGoogleData] = useState(null);
   const [showRoleSelect, setShowRoleSelect] = useState(false);
@@ -38,7 +38,6 @@ export function Register() {
         setGoogleData(res.data);
         setShowRoleSelect(true);
 
-        // Send welcome email webhook via n8n (non-blocking)
         try {
           const apiUrl = import.meta.env.VITE_N8N_email_URL || "https://n8ninvestormatch.tech/webhook/welcome_message";
           axios.post(apiUrl, {
@@ -131,7 +130,6 @@ export function Register() {
             </h1>
 
             <form onSubmit={handleRegister}>
-              {/* NAME */}
               <div className="mb-4">
                 <label className="text-gray-300 text-lg block mb-1">Name (Optional)</label>
                 <input
@@ -143,7 +141,6 @@ export function Register() {
                 />
               </div>
 
-              {/* EMAIL */}
               <div className="mb-4">
                 <label className="text-gray-300 text-lg block mb-1">Email</label>
                 <input
@@ -156,7 +153,6 @@ export function Register() {
                 />
               </div>
 
-              {/* PASSWORD */}
               <div className="mb-4">
                 <label className="text-gray-300 text-lg block mb-1">Password</label>
                 <div className="relative">
@@ -177,7 +173,6 @@ export function Register() {
                 </div>
               </div>
 
-              {/* ROLE */}
               <div className="mb-6">
                 <label className="text-gray-300 text-lg block mb-1">Account Type</label>
                 <select
@@ -185,7 +180,7 @@ export function Register() {
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full p-3 bg-gray-900 border border-gray-700 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-red-600 transition"
                 >
-                  <option value="startup">Startup Founder</option>
+                  <option value="student">Student</option>
                   <option value="investor">Investor</option>
                 </select>
               </div>
@@ -205,7 +200,6 @@ export function Register() {
               <div className="flex-grow border-t border-gray-700"></div>
             </div>
 
-            {/* GOOGLE SIGNUP BUTTON */}
             <div className="flex justify-center my-4">
               <GoogleLogin
                 text="signup_with"
@@ -224,7 +218,6 @@ export function Register() {
         </div>
       </div>
 
-      {/* ROLE SELECTION MODAL FOR GOOGLE SIGNUP */}
       {showRoleSelect && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex justify-center items-center z-50 p-4">
           <motion.div
@@ -248,11 +241,11 @@ export function Register() {
             </button>
 
             <button
-              onClick={() => handleRoleSelect("startup")}
+              onClick={() => handleRoleSelect("student")}
               disabled={loading}
               className="w-full py-3 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white border border-gray-600 rounded-xl font-bold cursor-pointer transition shadow-lg"
             >
-              Startup Founder
+              Student
             </button>
           </motion.div>
         </div>

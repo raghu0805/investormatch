@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../utils/api";
 import toast from "react-hot-toast";
 
-export default function CreateStartupProfile() {
+export default function CreateStudentProfile() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
+    studentName: "",
     startupName: "",
     founderName: "",
     industry: "",
@@ -23,34 +24,37 @@ export default function CreateStartupProfile() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Handle input changes
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const val = e.target.value;
+    if (e.target.name === "studentName") {
+      setForm({ ...form, studentName: val, startupName: val });
+    } else {
+      setForm({ ...form, [e.target.name]: val });
+    }
   };
 
-  // Submit handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      const res = await api.post("/startup/create", form);
-      toast.success("Startup profile is created");
-      navigate("/startup/dashboard");
+      await api.post("/student/create", form).catch(() => api.post("/startup/create", form));
+      toast.success("Student profile created successfully!");
+      navigate("/student/dashboard");
     } catch (err) {
-      setError(err?.response?.data?.message || "Failed to create profile");
+      setError(err?.response?.data?.message || err?.response?.data?.error || "Failed to create profile");
     }
 
     setLoading(false);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 px-4 py-10">
       <div className="bg-gray-800 p-8 rounded-2xl shadow-xl w-full max-w-2xl">
 
         <h2 className="text-3xl font-bold text-white text-center mb-6">
-          Create Startup Profile
+          Create Student Profile
         </h2>
 
         {error && (
@@ -58,52 +62,46 @@ export default function CreateStartupProfile() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Startup Name */}
           <input
             type="text"
-            name="startupName"
-            value={form.startupName}
+            name="studentName"
+            value={form.studentName}
             onChange={handleChange}
-            placeholder="Startup Name"
+            placeholder="Student / Startup / Project Name"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
           />
 
-          {/* Founder Name */}
           <input
             type="text"
             name="founderName"
             value={form.founderName}
             onChange={handleChange}
-            placeholder="Founder Name"
+            placeholder="Student Name / Lead Founder"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
           />
 
-          {/* Industry */}
           <input
             type="text"
             name="industry"
             value={form.industry}
             onChange={handleChange}
-            placeholder="Industry (e.g. FinTech, HealthTech)"
+            placeholder="Domain / Industry (e.g. EdTech, AI, HealthTech)"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
           />
 
-          {/* Location */}
           <input
             type="text"
             name="location"
             value={form.location}
             onChange={handleChange}
-            placeholder="Location"
+            placeholder="Location / University City"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
           />
 
-          {/* Problem Statement */}
           <textarea
             name="problemStatement"
             value={form.problemStatement}
@@ -114,18 +112,16 @@ export default function CreateStartupProfile() {
             required
           ></textarea>
 
-          {/* Solution */}
           <textarea
             name="solution"
             value={form.solution}
             onChange={handleChange}
-            placeholder="Solution"
+            placeholder="Solution / Project Idea"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             rows="3"
             required
           ></textarea>
 
-          {/* Description */}
           <textarea
             name="description"
             value={form.description}
@@ -135,17 +131,15 @@ export default function CreateStartupProfile() {
             rows="2"
           ></textarea>
 
-          {/* Pitch Deck URL */}
           <input
             type="text"
             name="pitchDeckURL"
             value={form.pitchDeckURL}
             onChange={handleChange}
-            placeholder="Pitch Deck URL"
+            placeholder="Pitch Deck / Project Link (URL)"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
           />
 
-          {/* Team Size */}
           <input
             type="number"
             name="teamSize"
@@ -155,7 +149,6 @@ export default function CreateStartupProfile() {
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
           />
 
-          {/* Stage */}
           <select
             name="stage"
             value={form.stage}
@@ -163,31 +156,29 @@ export default function CreateStartupProfile() {
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
           >
-            <option value="">Select Stage</option>
+            <option value="">Select Project Stage</option>
             <option value="idea">Idea</option>
             <option value="prototype">Prototype</option>
             <option value="MVP">MVP</option>
             <option value="Scale">Scale</option>
           </select>
 
-          {/* Funding Needed */}
           <input
             type="number"
             name="fundingNeeded"
             value={form.fundingNeeded}
             onChange={handleChange}
-            placeholder="Funding Needed"
+            placeholder="Funding Needed (in ₹)"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
           />
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold cursor-pointer"
           >
-            {loading ? "Creating..." : "Create Profile"}
+            {loading ? "Creating..." : "Create Student Profile"}
           </button>
         </form>
       </div>
