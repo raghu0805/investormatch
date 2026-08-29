@@ -134,7 +134,7 @@ const GoogleLogin = async (req, res) => {
     const { mode, email, name, picture } = req.body;
 
     if (!email) {
-      return res.status(400).json({ success: false, message: "Email is required" });
+      return res.status(400).json({ success: false, error: "Email is required", message: "Email is required" });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
@@ -142,7 +142,7 @@ const GoogleLogin = async (req, res) => {
 
     if (mode === "login") {
       if (!user) {
-        return res.status(404).json({ success: false, message: "User not registered. Please sign up first." });
+        return res.status(404).json({ success: false, error: "User not registered. Please sign up first.", message: "User not registered. Please sign up first." });
       }
 
       return res.status(200).json({
@@ -155,7 +155,13 @@ const GoogleLogin = async (req, res) => {
 
     if (mode === "signup") {
       if (user) {
-        return res.status(400).json({ success: false, message: "Account already exists. Please log in." });
+        return res.status(200).json({
+          success: true,
+          alreadyExists: true,
+          message: "Welcome back! Account already exists.",
+          token: createToken(user._id, user.email, user.role),
+          user: formatUser(user)
+        });
       }
       return res.status(200).json({
         success: true,
@@ -166,10 +172,26 @@ const GoogleLogin = async (req, res) => {
       });
     }
 
-    return res.status(400).json({ success: false, message: "Invalid Google auth mode" });
+    // Default fallback if mode is not specified
+    if (user) {
+      return res.status(200).json({
+        success: true,
+        message: "Google authentication successful",
+        token: createToken(user._id, user.email, user.role),
+        user: formatUser(user)
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      signupAllowed: true,
+      email: normalizedEmail,
+      name,
+      picture
+    });
   } catch (error) {
     console.error("Google Auth Error:", error);
-    return res.status(500).json({ success: false, message: "Server error during Google authentication" });
+    return res.status(500).json({ success: false, error: "Server error during Google authentication", message: "Server error during Google authentication" });
   }
 };
 

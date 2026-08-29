@@ -34,6 +34,14 @@ export function Register() {
         picture: user.picture,
       });
 
+      if (res.data.alreadyExists) {
+        const userRole = res.data.user?.role || "student";
+        login(res.data.token, userRole, res.data.user);
+        toast.success(res.data.message || "Welcome back! Logged in with Google");
+        navigate(`/${userRole}/dashboard`);
+        return;
+      }
+
       if (res.data.signupAllowed) {
         setGoogleData(res.data);
         setShowRoleSelect(true);
@@ -49,11 +57,12 @@ export function Register() {
         }
       }
     } catch (err) {
-      if (err.response?.data?.message === "Already registered" || err.response?.data?.message?.includes("already exists")) {
+      const errMsg = err.response?.data?.message || err.response?.data?.error || err.message;
+      if (errMsg === "Already registered" || errMsg?.toLowerCase().includes("already exists") || errMsg?.toLowerCase().includes("already registered")) {
         toast.error("Account already exists. Please log in.");
         navigate("/login");
       } else {
-        toast.error(err.response?.data?.message || err.response?.data?.error || "Google signup failed");
+        toast.error(errMsg || "Google signup failed");
       }
     } finally {
       setLoading(false);
@@ -204,7 +213,7 @@ export function Register() {
               <GoogleLogin
                 text="signup_with"
                 onSuccess={handleGoogleSignup}
-                onError={() => toast.error("Google Signup Failed")}
+                onError={() => toast.error("Google authentication failed. Please try again.")}
               />
             </div>
 

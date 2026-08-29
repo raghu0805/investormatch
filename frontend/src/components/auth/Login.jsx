@@ -40,9 +40,13 @@ export default function Login() {
       }
 
     } catch (err) {
-      const errorMessage = err.response?.data?.message || err.response?.data?.error;
-      if (errorMessage === "User not registered. Please sign up first." || err.response?.status === 404) {
-        toast.error("You don’t have an account yet. Please sign up first.");
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
+      if (
+        errorMessage === "User not registered. Please sign up first." ||
+        errorMessage?.toLowerCase().includes("not registered") ||
+        err.response?.status === 404
+      ) {
+        toast.error("You don't have an account yet. Please sign up first.");
         navigate("/signup");
       } else {
         toast.error(errorMessage || "Google login failed");
@@ -147,7 +151,7 @@ export default function Login() {
           <GoogleLogin
             text="signin_with"
             onSuccess={handleGoogleLogin}
-            onError={() => toast.error("Google login failed")}
+            onError={() => toast.error("Google authentication failed. Please try again.")}
           />
         </div>
 
