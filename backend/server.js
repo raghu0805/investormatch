@@ -16,22 +16,6 @@ connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: corsOptions,
-  transports: ["polling", "websocket"]
-});
-
-app.set("io", io);
-
-io.on("connection", (socket) => {
-  console.log("Socket connected:", socket.id);
-  socket.on("disconnect", () => {
-    console.log("Socket disconnected:", socket.id);
-  });
-});
-
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -49,15 +33,33 @@ if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) 
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
       return callback(null, true);
     }
-    return callback(null, true); // Permissive for development ease
+    return callback(null, true);
   },
   credentials: true
 };
+
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  transports: ["polling", "websocket"]
+});
+
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
+  });
+});
 
 // Middlewares
 app.use(cors(corsOptions));
