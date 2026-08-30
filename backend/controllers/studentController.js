@@ -114,8 +114,8 @@ const createStudentProfile = async (req, res) => {
       return res.status(400).json({ error: "Student profile already exists" });
     }
 
-    // Resolve default email from User model if not explicitly provided
-    let finalContactEmail = contactEmail?.trim()?.toLowerCase();
+    // Resolve default email from OAuth/JWT or User model if not explicitly provided
+    let finalContactEmail = contactEmail?.trim()?.toLowerCase() || req.userEmail?.toLowerCase();
     if (!finalContactEmail) {
       const user = await User.findById(userId);
       if (user && user.email) {
