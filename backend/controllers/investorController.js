@@ -1,6 +1,7 @@
 import Investor from '../models/InvestorProfile.js';
 import StudentProfile from '../models/StudentProfile.js';
 import Request from '../models/Request.js';
+import User from '../models/User.js';
 import { cosineSimilarity } from '../utils/cosineSimilarity.js';
 import { generateEmbedding } from "../utils/generateEmbeddings.js";
 
@@ -83,6 +84,7 @@ const createInvestorProfile = async (req, res) => {
 
     const {
       investorName,
+      contactEmail,
       investorType,
       location,
       minimumInvestment,
@@ -111,10 +113,20 @@ const createInvestorProfile = async (req, res) => {
       });
     }
 
+    // Resolve default email from User model if not explicitly provided
+    let finalContactEmail = contactEmail?.trim()?.toLowerCase();
+    if (!finalContactEmail) {
+      const user = await User.findById(userId);
+      if (user && user.email) {
+        finalContactEmail = user.email.toLowerCase();
+      }
+    }
+
     // 1️⃣ Create investor profile FIRST
     const newInvestor = await Investor.create({
       userId,
       investorName,
+      contactEmail: finalContactEmail,
       investorType,
       location,
       minimumInvestment: Number(minimumInvestment),
@@ -197,6 +209,7 @@ const updateInvestorProfile = async (req, res) => {
 
     const allowedFields = [
       "investorName",
+      "contactEmail",
       "investorType",
       "location",
       "minimumInvestment",

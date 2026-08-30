@@ -10,6 +10,7 @@ const investorProfileSchema = new mongoose.Schema(
     },
 
     investorName: { type: String, required: true },
+    contactEmail: { type: String, trim: true, lowercase: true },
 
     investorType: {
       type: String,

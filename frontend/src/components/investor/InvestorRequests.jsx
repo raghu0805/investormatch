@@ -128,7 +128,7 @@ export default function InvestorRequests() {
           const student = req.studentId || req.startupId;
           const studentName = student?.studentName || student?.startupName || "Unknown Student";
           const founderName = student?.founderName || "Founder";
-          const studentEmail = student?.userId?.email;
+          const studentEmail = student?.contactEmail || student?.userId?.email || student?.email;
 
           return (
             <div

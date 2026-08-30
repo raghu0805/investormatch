@@ -1,6 +1,7 @@
 import Student from '../models/StudentProfile.js';
 import Investor from '../models/InvestorProfile.js';
 import Request from '../models/Request.js';
+import User from '../models/User.js';
 import { cosineSimilarity } from "../utils/cosineSimilarity.js";
 import { generateEmbedding } from "../utils/generateEmbeddings.js";
 
@@ -82,6 +83,7 @@ const createStudentProfile = async (req, res) => {
       studentName,
       startupName,
       founderName,
+      contactEmail,
       industry,
       problemStatement,
       solution,
@@ -112,12 +114,22 @@ const createStudentProfile = async (req, res) => {
       return res.status(400).json({ error: "Student profile already exists" });
     }
 
+    // Resolve default email from User model if not explicitly provided
+    let finalContactEmail = contactEmail?.trim()?.toLowerCase();
+    if (!finalContactEmail) {
+      const user = await User.findById(userId);
+      if (user && user.email) {
+        finalContactEmail = user.email.toLowerCase();
+      }
+    }
+
     // 1️⃣ Create profile FIRST
     const newStudentProfile = await Student.create({
       userId,
       studentName: displayName,
       startupName: displayName,
       founderName,
+      contactEmail: finalContactEmail,
       industry,
       problemStatement,
       solution,
@@ -196,6 +208,7 @@ const updateStudentProfile = async (req, res) => {
       "studentName",
       "startupName",
       "founderName",
+      "contactEmail",
       "industry",
       "problemStatement",
       "solution",

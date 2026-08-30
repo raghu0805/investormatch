@@ -132,7 +132,7 @@ export default function StudentRequests() {
       <div className="max-w-3xl mx-auto space-y-4">
         {requests.map((req) => {
           const investor = req.investorId;
-          const investorEmail = investor?.userId?.email;
+          const investorEmail = investor?.contactEmail || investor?.userId?.email || investor?.email;
           const investorName = investor?.investorName || "Unknown Investor";
 
           return (

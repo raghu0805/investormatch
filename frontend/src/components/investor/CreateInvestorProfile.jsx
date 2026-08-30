@@ -7,6 +7,7 @@ export default function CreateInvestorProfile() {
 
   const [form, setForm] = useState({
     investorName: "",
+    contactEmail: "",
     investorType: "",
     location: "",
     minimumInvestment: "",
@@ -64,6 +65,15 @@ export default function CreateInvestorProfile() {
             placeholder="Investor/Company Name"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
+          />
+
+          <input
+            type="email"
+            name="contactEmail"
+            value={form.contactEmail}
+            onChange={handleChange}
+            placeholder="Contact Email (Optional - defaults to account email)"
+            className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
           />
 
           <select

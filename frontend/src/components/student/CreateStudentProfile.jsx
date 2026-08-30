@@ -10,6 +10,7 @@ export default function CreateStudentProfile() {
     studentName: "",
     startupName: "",
     founderName: "",
+    contactEmail: "",
     industry: "",
     location: "",
     problemStatement: "",
@@ -80,6 +81,15 @@ export default function CreateStudentProfile() {
             placeholder="Student Name / Lead Founder"
             className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
             required
+          />
+
+          <input
+            type="email"
+            name="contactEmail"
+            value={form.contactEmail}
+            onChange={handleChange}
+            placeholder="Contact Email (Optional - defaults to account email)"
+            className="w-full p-3 rounded-lg bg-gray-700 text-white outline-none"
           />
 
           <input

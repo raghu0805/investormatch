@@ -13,6 +13,7 @@ const studentSchema = new mongoose.Schema(
     startupName: { type: String }, // Backwards compatibility & alias
 
     founderName: { type: String },
+    contactEmail: { type: String, trim: true, lowercase: true },
 
     industry: { type: String, required: true },
 
