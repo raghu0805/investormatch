@@ -102,7 +102,10 @@ const getSentRequests = async (req, res) => {
     const sent = await Request.find({
       $or: [{ studentId }, { startupId: studentId }],
       senderRole: { $in: ["student", "startup"] }
-    }).populate("investorId");
+    }).populate({
+      path: "investorId",
+      populate: { path: "userId", select: "email name picture" }
+    });
 
     return res.status(200).json({ message: "Sent requests fetched", data: sent });
   } catch (err) {
@@ -123,8 +126,14 @@ const getReceivedRequests = async (req, res) => {
       investorId: investor._id,
       senderRole: { $in: ["student", "startup"] }
     })
-      .populate("studentId")
-      .populate("startupId");
+      .populate({
+        path: "studentId",
+        populate: { path: "userId", select: "email name picture" }
+      })
+      .populate({
+        path: "startupId",
+        populate: { path: "userId", select: "email name picture" }
+      });
 
     return res.status(200).json({
       message: "Received requests fetched",
@@ -212,7 +221,15 @@ const getInvestorSentRequests = async (req, res) => {
     const sent = await Request.find({
       investorId: investor._id,
       senderRole: "investor"
-    }).populate("studentId").populate("startupId");
+    })
+      .populate({
+        path: "studentId",
+        populate: { path: "userId", select: "email name picture" }
+      })
+      .populate({
+        path: "startupId",
+        populate: { path: "userId", select: "email name picture" }
+      });
 
     return res.status(200).json({ data: sent });
   } catch (err) {
@@ -229,7 +246,10 @@ const getStudentReceivedRequests = async (req, res) => {
     const received = await Request.find({
       $or: [{ studentId: student._id }, { startupId: student._id }],
       senderRole: "investor"
-    }).populate("investorId");
+    }).populate({
+      path: "investorId",
+      populate: { path: "userId", select: "email name picture" }
+    });
 
     return res.status(200).json({ data: received });
   } catch (err) {
