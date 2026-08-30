@@ -1,14 +1,16 @@
 import { useEffect, useState } from "react";
-import api from "../../utils/api";
+import api, { SOCKET_URL } from "../../utils/api";
+import { io } from "socket.io-client";
+import toast from "react-hot-toast";
 
 export default function InvestorRequests() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("received");
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (showLoading = false) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       let res;
       if (activeTab === "received") {
         res = await api.get("/request/received");
@@ -24,21 +26,42 @@ export default function InvestorRequests() {
       }
     } catch (err) {
       console.error("Error fetching requests:", err);
-      setRequests([]);
+      if (showLoading) setRequests([]);
+    } finally {
+      if (showLoading) setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchRequests();
+    fetchRequests(true);
   }, [activeTab]);
 
+  useEffect(() => {
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"]
+    });
+
+    socket.on("requestStatusUpdated", ({ requestId, status }) => {
+      setRequests(prev =>
+        prev.map(req => req._id === requestId ? { ...req, status } : req)
+      );
+    });
+
+    return () => socket.disconnect();
+  }, []);
+
   const updateStatus = async (requestId, status) => {
+    setRequests(prev =>
+      prev.map(req => req._id === requestId ? { ...req, status } : req)
+    );
+
     try {
       await api.put("/request/update", { requestId, status });
-      fetchRequests();
+      toast.success(`Request ${status} successfully`);
     } catch (err) {
       console.error("Error updating status:", err);
+      toast.error("Failed to update status");
+      fetchRequests(false);
     }
   };
 

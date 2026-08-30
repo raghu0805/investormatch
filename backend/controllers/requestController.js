@@ -153,6 +153,15 @@ const updateRequestStatus = async (req, res) => {
       return res.status(404).json({ message: "Request not found" });
     }
 
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("requestStatusUpdated", {
+        requestId: updated._id.toString(),
+        status: updated.status,
+        updated
+      });
+    }
+
     return res.status(200).json({ message: "Request updated", data: updated });
   } catch (err) {
     console.error(err);

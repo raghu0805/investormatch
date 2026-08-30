@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import api from "../../utils/api.js";
+import api, { SOCKET_URL } from "../../utils/api.js";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client";
 
 export default function StudentRequests() {
   const [requests, setRequests] = useState([]);
@@ -9,8 +10,8 @@ export default function StudentRequests() {
   const [activeTab, setActiveTab] = useState("sent");
   const navigate = useNavigate();
 
-  const fetchRequests = async () => {
-    setLoading(true);
+  const fetchRequests = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
       let res;
       if (activeTab === "sent") {
@@ -31,23 +32,42 @@ export default function StudentRequests() {
 
     } catch (err) {
       console.error("Error fetching requests:", err);
-      setRequests([]);
+      if (showLoading) setRequests([]);
+    } finally {
+      if (showLoading) setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    fetchRequests();
+    fetchRequests(true);
   }, [activeTab]);
 
+  useEffect(() => {
+    const socket = io(SOCKET_URL, {
+      transports: ["websocket", "polling"]
+    });
+
+    socket.on("requestStatusUpdated", ({ requestId, status }) => {
+      setRequests(prev =>
+        prev.map(req => req._id === requestId ? { ...req, status } : req)
+      );
+    });
+
+    return () => socket.disconnect();
+  }, []);
+
   const updateStatus = async (requestId, status) => {
+    setRequests(prev =>
+      prev.map(req => req._id === requestId ? { ...req, status } : req)
+    );
+
     try {
       await api.put("/request/update", { requestId, status });
-      fetchRequests();
       toast.success(`Request ${status} successfully`);
     } catch (err) {
       console.error("Error updating status:", err);
       toast.error("Failed to update status");
+      fetchRequests(false);
     }
   };
 

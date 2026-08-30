@@ -9,12 +9,27 @@ import investorRoutes from './routes/investorRoutes.js';
 import requestRoutes from './routes/requestRoutes.js';
 import newsRoutes from './routes/newsRoutes.js';
 
+import { Server } from 'socket.io';
+
 dotenv.config();
 connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: corsOptions
+});
+
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log("Socket connected:", socket.id);
+  socket.on("disconnect", () => {
+    console.log("Socket disconnected:", socket.id);
+  });
+});
 
 const allowedOrigins = [
   "http://localhost:5173",
