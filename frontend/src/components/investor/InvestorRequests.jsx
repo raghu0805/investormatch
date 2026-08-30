@@ -59,7 +59,8 @@ export default function InvestorRequests() {
 
   useEffect(() => {
     const socket = io(SOCKET_URL, {
-      transports: ["websocket", "polling"]
+      transports: ["polling", "websocket"],
+      reconnectionAttempts: 5
     });
 
     socket.on("requestStatusUpdated", ({ requestId, status }) => {
