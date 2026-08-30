@@ -58,7 +58,9 @@ export function Register() {
       }
     } catch (err) {
       const errMsg = err.response?.data?.message || err.response?.data?.error || err.message;
-      if (errMsg === "Already registered" || errMsg?.toLowerCase().includes("already exists") || errMsg?.toLowerCase().includes("already registered")) {
+      if (err.code === "ERR_NETWORK" || err.message?.includes("Network Error") || err.message?.includes("ERR_CONNECTION_REFUSED")) {
+        toast.error("Unable to connect to server. Please verify backend is running at http://localhost:5000");
+      } else if (errMsg === "Already registered" || errMsg?.toLowerCase().includes("already exists") || errMsg?.toLowerCase().includes("already registered")) {
         toast.error("Account already exists. Please log in.");
         navigate("/login");
       } else {

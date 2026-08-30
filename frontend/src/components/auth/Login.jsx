@@ -41,7 +41,9 @@ export default function Login() {
 
     } catch (err) {
       const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message;
-      if (
+      if (err.code === "ERR_NETWORK" || err.message?.includes("Network Error") || err.message?.includes("ERR_CONNECTION_REFUSED")) {
+        toast.error("Unable to connect to server. Please verify backend is running at http://localhost:5000");
+      } else if (
         errorMessage === "User not registered. Please sign up first." ||
         errorMessage?.toLowerCase().includes("not registered") ||
         err.response?.status === 404
